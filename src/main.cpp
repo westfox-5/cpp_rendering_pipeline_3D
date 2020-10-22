@@ -1,28 +1,64 @@
 #include <iostream>
 
-#include "rpl/rpl.h"
+#include "rpl/engine.h"
 #include "math.cpp"
 
 
 void a();
 
-int main(int, char**) {
+class MyEngine : public rpl::Engine<char> {
+    private:
+        int i = 0;
+    public:
+    bool OnCreate() final {
 
-    a();
+        return true;
+    }
+
+    bool OnUpdate() final {
+
+        Draw(1,1, 'A');
+
+        //getch();
+
+        //if (i == 100) return false;
+        return true;
+    }
+
+    void OnDestroy() final {
+
+    }
+};
+
+
+int main(int, char**) {
+    //a();
+
+
+    MyEngine e;
+    if (e.Build(20, 20)) {
+        e.Run();
+    }
+
+    return 0;
 }
 
 
+
+
+
+
 void a() {
-    const rpl::math::vf2d v1 = { 1.0, 2.1 };
-    const  rpl::math::vf2d v2 = {1.2f, 2.4f};
+    const rpl::Math::vf2d v1 = { 1.0, 2.1 };
+    const  rpl::Math::vf2d v2 = {1.2f, 2.4f};
 
     //std::cout << v1 << " + " << v2 << " = " << (v1+v2) << std::endl;
     std::cout << v1 << " + " << v2 << std::endl;
     std::cout << std::endl;
     std::cout << std::endl;
 
-    const rpl::math::vf3d v3 = {1.0f, 2.2, 4};
-    const rpl::math::vf3d v4 = {1.2f, 2.4f, 12.3};
+    const rpl::Math::vf3d v3 = {1.0f, 2.2, 4};
+    const rpl::Math::vf3d v4 = {1.2f, 2.4f, 12.3};
 
     //std::cout << v3 << " + " << v4 << " = " << (v3+v4) << std::endl;
         std::cout << v3 << " + " << v4 << std::endl;
@@ -30,8 +66,8 @@ void a() {
     std::cout << std::endl;
     std::cout << std::endl;
 
-    const rpl::math::vf4d v5 = {1.0f, 2.0, 4.0, 13};
-    const rpl::math::vf4d v6 = {1.2f, 2.4f, 12.3, 0.3};
+    const rpl::Math::vf4d v5 = {1.0f, 2.0, 4.0, 13};
+    const rpl::Math::vf4d v6 = {1.2f, 2.4f, 12.3, 0.3};
 
     // std::cout << v5 << " + " << v6 << " = " << (v5+v6) << std::endl;
     // std::cout << v5 << " / " << v6 << " = " << (v5/v6) << std::endl;
@@ -40,7 +76,13 @@ void a() {
     std::cout << std::endl;
     std::cout << std::endl;
 
-    const rpl::math::mi2d mi2d_1 = {1, 2, 3, 4};
-    std::cout << mi2d_1 << std::endl;
+    const rpl::Math::Matrix<float,2> mf2d_1 = {
+        1, 2, 
+        3, 4
+    };
+    const rpl::Math::Matrix<float,2> mf2d_2 = {
+        1, 2,
+        3, 4};
+    std::cout << (mf2d_1*mf2d_2) << std::endl;
 
 }

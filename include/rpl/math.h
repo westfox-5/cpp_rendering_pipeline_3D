@@ -1,50 +1,46 @@
 #pragma once // include only one time at compile-time
 
-#include <vector>
 #include <cmath>
 
 
 namespace rpl {
-    namespace math {
+    namespace Math {
 
         ////////////////////////////////////////////////
         ////////////////////////////////////////////////
-        /// VECTOR
+        /// Vector
 
-        template <typename T, std::size_t len>
-        struct Vec {
-            T elems[len];
+        template <typename type_t, std::size_t len>
+        struct Vector {
+            type_t elems[len];
 
-            //Vec<T, len>() : elems() { elems = new T[len]; }
-            //Vec<T, len>(const Vec<T, len> & other): elems(other.elems) {}
-            ~Vec() {}
 
+            // COMMONS
+            type_t X() { return elems[0]; }
+            type_t Y() { return elems[1]; }
+            type_t Z() { return elems[2]; }
+            type_t W() { return elems[3]; }
         };
 
-        typedef Vec<int, 2> vi2d;
-        typedef Vec<float, 2> vf2d;
-
-        typedef Vec<int, 3> vi3d;
-        typedef Vec<float, 3> vf3d;
-
-        typedef Vec<int, 4> vi4d;
-        typedef Vec<float, 4> vf4d;
-
+        typedef Vector<float, 2> vf2d;
+        typedef Vector<float, 3> vf3d;
+        typedef Vector<float, 4> vf4d;
 
         ////////////////////////////////////////////////
         ////////////////////////////////////////////////
         /// MATRIX
 
-        template <typename T, std::size_t len>
-        struct Mat {
-            T elems[len*len];
+        template <typename type_t, std::size_t len>
+        struct Matrix {
+            type_t elems[len*len];
 
-            inline const T getElem(int r, int c) const {
-                return elems[r+ (c*len)];
+            inline const type_t getElem(int r, int c) const {
+                //std::cout << std::endl <<r << ' ' << c << " : " << elems[r +(c*len)] << std::endl;
+                return elems[(r*len)+c];
             }
 
-            Vec<T, len> getRow(int r) const { 
-                Vec<T, len> v = {};
+            Vector<type_t, len> getRow(int r) const { 
+                Vector<type_t, len> v = {};
                 for (int c=0; c<len; ++c) {
                     v.elems[c] = getElem(r, c);
                 }
@@ -52,7 +48,18 @@ namespace rpl {
             }
         };
 
-        typedef Mat<int, 2> mi2d;
-        typedef Mat<float, 2> mf2d;
+        // typedef Matrix<float, 2> mf2d;
+        // typedef Matrix<float, 3> mf3d;
+        // typedef Matrix<float, 4> mf4d;
+
+
+        //static matrix rotationX(degree),rotationY(degree),rotationZ(degree) 
+        //static matrix identity
+        
+        template <typename type_t, size_t len>
+        static void transform(Vector<type_t, len> v, Matrix<type_t, len> m ) {
+            Vector<type_t, len> tmp(&v);
+
+        }
     }
 }
