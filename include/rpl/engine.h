@@ -1,70 +1,70 @@
 #pragma once // include only one time at compile-time
 
+#include "pipe.h"
 #include "math.h"
 #include "target.h"
+#include "shader.h"
 
 namespace rpl {
     
-    template<typename target_t>
+    template <typename target_t>
     class Engine {
     public:
-        bool Build(size_t width, size_t height) {
+        bool Build(int32_t width, int32_t height, TargetInterface<target_t>* target) {
             can_run = true;
 
-            // initialize target            
-            
-            this->target =  new rpl::Target<target_t>(width, height);
+            can_run |= pipe->Build(width, height, target);
 
-            return true;
+
+            return can_run;
         }
 
 
     public:
         ~Engine() {
-            delete this->target;
+            delete this->pipe;
         }
     public:
         virtual bool OnCreate()  /*user defined*/   = 0;
-        virtual bool OnUpdate()  /*user defined*/   = 0;
+        // virtual bool OnUpdate()  /*user defined*/   = 0;
         virtual void OnDestroy() /*user defined*/   = 0;
     public:
-        void Draw(size_t x, size_t y, target_t p);
-
 
         void Run() {
 
-            std::cout<< "here" << std::endl;
-            // first of all, initialize user content
+            // initialize user content
             if (!OnCreate())  {
                 can_run = false;
             }
 
-            while (can_run) {
+            // while (can_run) {
+            //     if (!OnUpdate()) {
+            //         can_run = false;
+            //     }
 
-                // display text!
-                this->target->Render();
+            //     // display!
+            //     pipe.ClearBuffer();
+            //     pipe.Render();
+            // }
 
-                if (!OnUpdate()) {
-                    can_run = false;
-                }
+
+            // apply transformation matrixxxx
+
+            if (can_run) {
+                pipe.Render();
             }
 
             // end of the games
             OnDestroy();
         }
 
+    protected:
+        rpl::PipeLine<target_t>* pipe;
+    
     private:
-        rpl::Target<target_t>* target;
         bool can_run;
     };
 
-
-    template <typename target_t>
-    void rpl::Engine<target_t>::Draw(size_t x, size_t y, target_t p) {
-        if (!p) return;
-
-        target->set(x, y, p);
-    }
 
 
 }

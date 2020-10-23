@@ -5,7 +5,7 @@
 using namespace rpl::Math;
 
 //////////////////////////////////////////////////////
-/////// VECtype_tOR
+/////// VECTOR
 
 template <typename type_t, std::size_t len>
 inline std::ostream& operator<<(std::ostream& os, const Vector<type_t, len>& v) { 
