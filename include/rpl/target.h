@@ -5,7 +5,8 @@ namespace rpl {
     template <typename target_t>
     class TargetInterface {
     public:
-        virtual void Set(size_t x, size_t y, target_t t) =0;
-        virtual target_t Get(size_t x, size_t y) =0;
+        virtual void Set(int row, int col, target_t val) = 0;
+        virtual target_t Get(int row, int col) = 0;
+
     };
 }
