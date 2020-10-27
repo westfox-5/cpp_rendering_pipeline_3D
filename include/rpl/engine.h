@@ -118,9 +118,12 @@ namespace rpl {
             return  { alpha, beta, gamma };
         }
 
-
-        void DrawTriangle(rpl::Math::Vector3D *vertices)
+        void DrawTriangle(rpl::Math::Vector3D vertices[])
         {
+            // vertices[0].x /= vertices[0].w; vertices[0].y /= vertices[0].w; vertices[0].z /= vertices[0].w;
+            // vertices[1].x /= vertices[1].w; vertices[1].y /= vertices[1].w; vertices[1].z /= vertices[1].w;
+            // vertices[2].x /= vertices[2].w; vertices[2].y /= vertices[2].w; vertices[2].z /= vertices[2].w;
+
             // starts at max in order to compute min
             rpl::Math::Vector2D boundingBoxMin = {(float)ScreenWidth()-1, (float)ScreenHeight()-1};
             //starts at min in order to compute max
@@ -136,11 +139,11 @@ namespace rpl {
                 boundingBoxMax.y = std::min((float)ScreenHeight()-1, std::max(boundingBoxMax.y, vertices[i].y));
             }
 
-            // std::cout << "------------------"<<std::endl;
-            // std::cout << "BOUNDING BOX: " <<std::endl;
-            // std::cout << "min: " << boundingBoxMin <<std::endl;
-            // std::cout << "max: " << boundingBoxMax <<std::endl;
-            // std::cout << "------------------"<<std::endl<<std::endl;
+            std::cout << "------------------"<<std::endl;
+            std::cout << "BOUNDING BOX: " <<std::endl;
+            std::cout << "min: " << boundingBoxMin <<std::endl;
+            std::cout << "max: " << boundingBoxMax <<std::endl;
+            std::cout << "------------------"<<std::endl<<std::endl;
 
             // compute only in bounding box!
             //for( int row=boundingBoxMin.x; row<boundingBoxMax.x; ++row) 
@@ -179,8 +182,10 @@ namespace rpl {
                                     {
                                         char arr[] = {'0','1','2','3','4','5','6','7','8','9'};
                                         int iz = std::round(z);
-                                        std::cout << "SHADER returns "<< arr[abs((iz % 10))] << " for Z = " << iz << std::endl;
-                                        return arr[abs((iz % 10))]; 
+                                        //int idx = (abs((iz % 10))+9 )%10;
+                                        int idx = abs(iz % 10);
+                                        std::cout << "SHADER returned "<< arr[ idx ] << " for Z = " << iz << std::endl;
+                                        return arr[ idx ]; 
                                     };
 
                                     target_->Set(row, col, shader(z));

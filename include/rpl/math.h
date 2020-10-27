@@ -114,7 +114,7 @@ namespace rpl {
         std::ostream& operator<<(std::ostream& os, const rpl::Math::Vector4D v) { 
             os << '[' << v.x << ", " << v.y << ", " << v.z << ", " << v.w << ']';
             return os; 
-        }
+        } 
 
         struct Matrix4D {
             float m[4][4];
@@ -222,25 +222,36 @@ namespace rpl {
                 return true;
             }
 
+
+            rpl::Math::Matrix4D operator*(const Matrix4D &M) const {
+                Matrix4D mult;
+
+                mult.m[0][0] = this->m[0][0] * M.m[0][0] + this->m[0][1] * M.m[1][0] + this->m[0][2] * M.m[2][0] + this->m[0][3] * M.m[3][0];
+                mult.m[0][1] = this->m[0][0] * M.m[0][1] + this->m[0][1] * M.m[1][1] + this->m[0][2] * M.m[2][1] + this->m[0][3] * M.m[3][1];
+                mult.m[0][2] = this->m[0][0] * M.m[0][2] + this->m[0][1] * M.m[1][2] + this->m[0][2] * M.m[2][2] + this->m[0][3] * M.m[3][2];
+                mult.m[0][3] = this->m[0][0] * M.m[0][3] + this->m[0][1] * M.m[1][3] + this->m[0][2] * M.m[2][3] + this->m[0][3] * M.m[3][3];
+
+                mult.m[1][0] = this->m[1][0] * M.m[0][0] + this->m[1][1] * M.m[1][0] + this->m[1][2] * M.m[2][0] + this->m[1][3] * M.m[3][0];
+                mult.m[1][1] = this->m[1][0] * M.m[0][1] + this->m[1][1] * M.m[1][1] + this->m[1][2] * M.m[2][1] + this->m[1][3] * M.m[3][1];
+                mult.m[1][2] = this->m[1][0] * M.m[0][2] + this->m[1][1] * M.m[1][2] + this->m[1][2] * M.m[2][2] + this->m[1][3] * M.m[3][2];
+                mult.m[1][3] = this->m[1][0] * M.m[0][3] + this->m[1][1] * M.m[1][3] + this->m[1][2] * M.m[2][3] + this->m[1][3] * M.m[3][3];
+
+                mult.m[2][0] = this->m[2][0] * M.m[0][0] + this->m[2][2] * M.m[1][0] + this->m[2][2] * M.m[2][0] + this->m[2][3] * M.m[3][0];
+                mult.m[2][1] = this->m[2][0] * M.m[0][1] + this->m[2][2] * M.m[1][1] + this->m[2][2] * M.m[2][1] + this->m[2][3] * M.m[3][1];
+                mult.m[2][2] = this->m[2][0] * M.m[0][2] + this->m[2][2] * M.m[1][2] + this->m[2][2] * M.m[2][2] + this->m[2][3] * M.m[3][2];
+                mult.m[2][3] = this->m[2][0] * M.m[0][3] + this->m[2][2] * M.m[1][3] + this->m[2][2] * M.m[2][3] + this->m[2][3] * M.m[3][3];
+
+                mult.m[3][0] = this->m[3][0] * M.m[0][0] + this->m[3][2] * M.m[1][0] + this->m[3][2] * M.m[2][0] + this->m[3][3] * M.m[3][0];
+                mult.m[3][1] = this->m[3][0] * M.m[0][1] + this->m[3][2] * M.m[1][1] + this->m[3][2] * M.m[2][1] + this->m[3][3] * M.m[3][1];
+                mult.m[3][2] = this->m[3][0] * M.m[0][2] + this->m[3][2] * M.m[1][2] + this->m[3][2] * M.m[2][2] + this->m[3][3] * M.m[3][2];
+                mult.m[3][3] = this->m[3][0] * M.m[0][3] + this->m[3][2] * M.m[1][3] + this->m[3][2] * M.m[2][3] + this->m[3][3] * M.m[3][3];
+
+                return mult;
+
+            }
+
         };
-
-        static Matrix4D MatrixMultiply(const Matrix4D &A, const Matrix4D &B )
-        {
-            Matrix4D C;
-            for(int r=0;r<4;r++)    
-            {    
-                for(int c=0;c<4;c++)    
-                {    
-                    C.m[r][c] = 0; 
-                    for(int k=0;k<4;k++)
-                        C.m[r][c] += A.m[r][k]*B.m[k][c];
-                }    
-            } 
-
-            return C;  
-        }
-
-        static Matrix4D identity() {
+        static Matrix4D Identity() {
             return {{
                 {1, 0, 0, 0 },
                 {0, 1, 0, 0},
@@ -249,75 +260,61 @@ namespace rpl {
             }};
         } 
 
-        static Matrix4D translation(const Vector3D &t) {
+        static Matrix4D Translate(const Vector3D &t) {
             return {{
-                {1, 0, 0, t.x}, 
-                {0, 1, 0, t.y},
-                {0, 0, 1, t.z}, 
-                {0, 0, 0, 1  }
+                {1, 0, 0, 0}, 
+                {0, 1, 0, 0},
+                {0, 0, 1, 0}, 
+                {t.x, t.y, t.z, 1}
             }};
         }
 
-        static Matrix4D scale(const Vector3D &scale) {
+        static Matrix4D Scale(const Vector3D &scale) {
             return {{
-                {scale.x, 0, 0,     0},
-                {0, scale.y, 0,     0},
-                {0, 0,     scale.z, 0},
-                {0, 0,     0,     1}
+                {scale.x, 0, 0, 0},
+                {0, scale.y, 0, 0},
+                {0, 0, scale.z, 0},
+                {0, 0, 0, 1}
             }};
         }
 
-        static Matrix4D orthographic(const float right, const float left, const float bottom, const float top, const float zNear, const float zFar) {
+        static Matrix4D Orthographic(const float right, const float left, const float bottom, const float top, const float zNear, const float zFar) {
             return {{
-                {2 / (right-left), 0, 0, -(right+left) / (right-left)},  //
-                {0, 2 / (bottom-top), 0, -(bottom+top) / (bottom-top)},  //
-                {0, 0, 2 / (zFar - zNear), -(zFar + zNear) / (zFar - zNear)},  //
-                {0, 0, 0, 1}  //
+                {2 / (right-left), 0, 0, -(right+left) / (right-left)},  
+                {0, 2 / (top-bottom), 0, -(top+bottom) / (top-bottom)},  
+                {0, 0, 2 / (zFar - zNear), -(zFar + zNear) / (zFar - zNear)},  
+                {0, 0, 0, 1}  
             }};
         }
 
-        static Matrix4D perspective(const float right, const float left, const float bottom, const float top, const float zNear, const float zFar) {
+        static Matrix4D Perspective(const float right, const float left, const float bottom, const float top, const float zNear, const float zFar) {
             return {{
-                { (2 * zNear) / (right-left), 0, -(right+left) / (right-left), 0},  //
-                {0, (2 * zNear) / (bottom-top), -(bottom+top) / (bottom-top), 0},  //
-                {0, 0, (zFar + zNear) / (zFar - zNear), -(2 * zFar * zNear) / (zFar - zNear)},  //
-                {0, 0, 1, 0},  //
+                { (2 * zNear) / (right-left), 0, -(right+left) / (right-left), 0},  
+                {0, (2 * zNear) / (bottom-top), -(bottom+top) / (bottom-top), 0},  
+                {0, 0, (zFar + zNear) / (zFar-zNear), (-2 * zFar * zNear) / (zFar - zNear)},  
+                {0, 0, 1, 0},
             }};
         }
 
-        static Matrix4D perspective_fov(const float fov, const float zNear, const float zFar) {
-            const float scale = 1 / tan(fov *0.5 * PI /180 );
-            return {{
-                {scale, 0, 0, 0},
-                {0, scale, 0, 0},
-                {0, 0, - zFar / (zFar - zNear), -1},
-                {0, 0, - (zFar * zNear) / (zFar - zNear), 0} 
-            }};
-        }
-
-        static void MultMatrixVector(const Vector3D &in, Vector3D &out, Matrix4D &M) {
+        static void MultMatrixVector3(const Vector3D &in, Vector3D &out, Matrix4D &M) {
             out.x = in.x * M.m[0][0] + in.y * M.m[1][0] + in.z * M.m[2][0] + M.m[3][0];
             out.y = in.x * M.m[0][1] + in.y * M.m[1][1] + in.z * M.m[2][1] + M.m[3][1];
             out.z = in.x * M.m[0][2] + in.y * M.m[1][2] + in.z * M.m[2][2] + M.m[3][2];
 
-            float w = in.x * M.m[0][3] + in.y * M.m[1][3] + in.z * M.m[2][3] + M.m[3][3]; 
- 
-            // normalize if w is different than 0 (convert from homogeneous to Cartesian coordinates)
-            if (w != 0) { 
-                out.x /= w; 
-                out.y /= w; 
-                out.z /= w; 
-            } 
+            const float w = in.x * M.m[0][3] + in.y * M.m[1][3] + in.z * M.m[2][3] + M.m[3][3];
+            if (w != 0.0f) {
+                out.x /= w; out.y /= w; out.z /= w;
+            }
         }
 
-        static void MultMatrixVector(const Vector3D &in, Vector4D &out, Matrix4D &M, float w=1) {
+        static void MultMatrixVector4(const Vector3D &in, Vector4D &out, Matrix4D &M, float w = 1.f) {
             out.x = in.x * M.m[0][0] + in.y * M.m[1][0] + in.z * M.m[2][0] + M.m[3][0] * w;
             out.y = in.x * M.m[0][1] + in.y * M.m[1][1] + in.z * M.m[2][1] + M.m[3][1] * w;
             out.z = in.x * M.m[0][2] + in.y * M.m[1][2] + in.z * M.m[2][2] + M.m[3][2] * w;
             out.w = in.x * M.m[0][3] + in.y * M.m[1][3] + in.z * M.m[2][3] + M.m[3][3] * w;
         }
 
-        static void MultMatrixVector(const Vector4D &in, Vector4D &out, Matrix4D &M) {
+        static void MultMatrixVector4(const Vector4D &in, Vector4D &out, Matrix4D &M) {
             out.x = in.x * M.m[0][0] + in.y * M.m[1][0] + in.z * M.m[2][0] + in.w * M.m[3][0];
             out.y = in.x * M.m[0][1] + in.y * M.m[1][1] + in.z * M.m[2][1] + in.w * M.m[3][1];
             out.z = in.x * M.m[0][2] + in.y * M.m[1][2] + in.z * M.m[2][2] + in.w * M.m[3][2];

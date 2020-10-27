@@ -28,19 +28,20 @@ public:
 public:
     void Set(int row, int col, char val) const
     {
-        std::cout << " ************ " <<std::endl;
-        std::cout << "Setting in target: [" << row << ", " << col << "]  ( val: " << val << ", SW: " <<ScreenWidth() << ", SH: "<< ScreenHeight() <<") : " << std::endl;
-        if (row >= 0 && row < ScreenHeight() && col >= 0 && col < ScreenWidth()) {
-            std::cout <<"Current val: "<< buff[row][col] << std::endl;
+        std::cout << " ************ " << std::endl;
+        std::cout << "Setting in target: [" << row << ", " << col << "]  ( val: " << val << ", SW: " << ScreenWidth() << ", SH: " << ScreenHeight() << ") : " << std::endl;
+        if (row >= 0 && row < ScreenHeight() && col >= 0 && col < ScreenWidth())
+        {
+            std::cout << "Current val: " << buff[row][col] << std::endl;
             buff[row][col] = val;
         }
-        std::cout << " ************ " <<std::endl;
+        std::cout << " ************ " << std::endl;
     }
 
     char Get(int row, int col) const
     {
         if (buff[row][col] != '.')
-            std::cout << "Getting from target at ["<<row<<", "<<col<<"] : " << buff[row][col] << std::endl;
+            std::cout << "Getting from target at [" << row << ", " << col << "] : " << buff[row][col] << std::endl;
         return buff[row][col];
     }
 
@@ -93,14 +94,14 @@ public:
 public:
     bool OnCreate() final
     {
-
         rpl::Math::Vector3D v1 = {1, -1, 1.5};
-        rpl::Math::Vector3D v2 = {1, 1, 1.1};
+        rpl::Math::Vector3D v2 = {1,  1, 1.1};
         rpl::Math::Vector3D v3 = {-1, 1, 1.5};
-        rpl::Math::Vector3D v4 = {-1, -1, 1.9};
+        rpl::Math::Vector3D v4 = {-1,-1, 1.9};
 
         mesh.triangles.push_back({{v1, v2, v3}});
         mesh.triangles.push_back({{v1, v3, v4}});
+
         std::cout << "------------------" << std::endl;
         std::cout << "INITIAL TRIANGLES: " << std::endl;
         for (auto &triangle : mesh.triangles)
@@ -111,48 +112,30 @@ public:
         }
         std::cout << "------------------" << std::endl
                   << std::endl;
-
+        
         // projection matrix
-        rpl::Math::Matrix4D projectionMatrix = rpl::Math::perspective(1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 2.0f);
+        //rpl::Math::Matrix4D projectionMatrix = rpl::Math::Perspective(1.0f, -1.0f, 1.0f, -1.0f, .1f, 2.f);
+        rpl::Math::Matrix4D projectionMatrix = rpl::Math::Perspective(-1.0f, 1.0f, -1.0f, 1.0f, 1.f, 2.f);
 
-        rpl::Math::Matrix4D transformations = //rpl::Math::identity();
-            rpl::Math::scale({ 20.0f, 20.0f, 1.9f});
-
+        rpl::Math::Matrix4D scaling = rpl::Math::Scale({80.f, 80.f, .8f});
 
         for (auto &triangle : mesh.triangles)
         {
-            rpl::Math::Vector3D transformedP[3], projectedP[3];
+            rpl::Math::Vector3D transformedP[3];
+            rpl::Math::Vector3D projectedP[3];
+             
 
             // 3D -> 2D projection each vector
             for (int i = 0; i < 3; ++i)
             {
-                rpl::Math::MultMatrixVector(triangle.points[i], transformedP[i], transformations);
+                rpl::Math::MultMatrixVector3(triangle.points[i], transformedP[i], scaling);
+                rpl::Math::MultMatrixVector3(transformedP[i], projectedP[i], projectionMatrix);
 
-                //transformedP[i].z += 3.0f;
-
-                rpl::Math::MultMatrixVector(transformedP[i], projectedP[i], projectionMatrix);
-
-                projectedP[i].x += 1.0f;
-                projectedP[i].y += 1.0f;
-                projectedP[i].x *= 0.5f * (float)ScreenHeight();
-                projectedP[i].y *= 0.5f * (float)ScreenWidth();
+                // Offset into the screen
+                projectedP[i].x +=  (float)ScreenHeight() / 2;
+                projectedP[i].y +=  (float)ScreenWidth() / 2;
             }
 
-            std::cout << "------------------" << std::endl;
-            std::cout << "TRANSFORMED: " << std::endl;
-            for (auto &p : transformedP)
-                std::cout << p << std::endl;
-
-            std::cout << "------------------" << std::endl
-                        << std::endl;
-
-            std::cout << "------------------" << std::endl;
-            std::cout << "PROJECTED: " << std::endl;
-            for (auto &p : projectedP)
-                std::cout << p << std::endl;
-
-            std::cout << "------------------" << std::endl
-                        << std::endl;
 
             DrawTriangle(projectedP);
         }
@@ -167,9 +150,8 @@ public:
 
 int main(int, char **)
 {
-    const MyTarget myTarget(150, 50);
+    const MyTarget myTarget(200, 72);
     MyEngine myEngine(&myTarget);
-
     myEngine.Run();
 
     myTarget.Print();
