@@ -14,11 +14,6 @@ namespace rpl {
             Vector2D(float x, float y) : x(x), y(y) {}
             Vector2D(const Vector2D & other) : x(other.x), y(other.y) {}
 
-            friend std::ostream& operator<<(std::ostream& os, const Vector2D& val) { 
-                os << '[' << val.x << ", " << val.y << ']';
-                return os; 
-            }
-            
             const Vector2D operator+(const Vector2D &val) const { return Vector2D{x+val.x, y+val.y}; }
             const Vector2D operator-(const Vector2D &val) const { return Vector2D{x-val.x, y-val.y}; }
             const Vector2D operator*(const Vector2D &val) const { return Vector2D{x*val.x, y*val.y}; }
@@ -37,6 +32,11 @@ namespace rpl {
             }
         };
 
+        std::ostream& operator<<(std::ostream& os, const rpl::Math::Vector2D v) { 
+            os << '[' << v.x << ", " << v.y << ']';
+            return os; 
+        }
+
         struct Vector3D {
             float x, y, z;
 
@@ -44,10 +44,7 @@ namespace rpl {
             Vector3D(float x, float y, float z) : x(x), y(y), z(z) {}
             Vector3D(const Vector3D & other) : x(other.x), y(other.y), z(other.z) {}
 
-            friend std::ostream& operator<<(std::ostream& os, const Vector3D& val) { 
-                os << '[' << val.x << ", " << val.y << ", " << val.z << ']';
-                return os; 
-            }
+            
             
             const Vector3D operator+(const Vector3D &val) const { return Vector3D{x+val.x, y+val.y, z+val.z}; }
             const Vector3D operator-(const Vector3D &val) const { return Vector3D{x-val.x, y-val.y, z-val.z}; }
@@ -75,6 +72,11 @@ namespace rpl {
             }
         };
 
+        std::ostream& operator<<(std::ostream& os, const rpl::Math::Vector3D v) { 
+            os << '[' << v.x << ", " << v.y << ", " << v.z << ']';
+            return os; 
+        }
+
         struct Vector4D {
             float x, y, z, w;
 
@@ -82,11 +84,6 @@ namespace rpl {
             Vector4D(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {}
             Vector4D(const Vector3D &v3D, float w) : x(v3D.x), y(v3D.y), z(v3D.z), w(w) {}
             Vector4D(const Vector4D &other) : x(other.x), y(other.y), z(other.z), w(other.w) {}
-
-            friend std::ostream& operator<<(std::ostream& os, const Vector4D& val) { 
-                os << '[' << val.x << ", " << val.y << ", " << val.z << ", " << val.w << ']';
-                return os; 
-            }
 
             const Vector4D operator+(const Vector4D &val) const { return Vector4D{x+val.x, y+val.y, z+val.z, w+val.w}; }
             const Vector4D operator-(const Vector4D &val) const { return Vector4D{x-val.x, y-val.y, z-val.z, w-val.w}; }
@@ -114,6 +111,11 @@ namespace rpl {
             }
         };
 
+        std::ostream& operator<<(std::ostream& os, const rpl::Math::Vector4D v) { 
+            os << '[' << v.x << ", " << v.y << ", " << v.z << ", " << v.w << ']';
+            return os; 
+        }
+
         struct Matrix4D {
             float m[4][4];
 
@@ -134,8 +136,12 @@ namespace rpl {
                 };
             }
 
-            inline std::ostream& operator<<(std::ostream& os) const { 
-                for (size_t r = 0; r<4; ++r) { os << getRow(r) << std::endl; }
+            std::ostream& operator<<(std::ostream& os) const { 
+                for (int r = 0; r<4; ++r){
+                    for (int c = 0; c<4; ++c)
+                        os << m[r][c];
+                    os << std::endl; 
+                }
                 return os;
             }
 
@@ -272,8 +278,8 @@ namespace rpl {
 
         static Matrix4D perspective(const float right, const float left, const float bottom, const float top, const float zNear, const float zFar) {
             return {{
-                {2 * zNear / (right-left), 0, -(right+left) / (right-left), 0},  //
-                {0, 2 * zNear / (bottom-top), -(bottom+top) / (bottom-top), 0},  //
+                { (2 * zNear) / (right-left), 0, -(right+left) / (right-left), 0},  //
+                {0, (2 * zNear) / (bottom-top), -(bottom+top) / (bottom-top), 0},  //
                 {0, 0, (zFar + zNear) / (zFar - zNear), -(2 * zFar * zNear) / (zFar - zNear)},  //
                 {0, 0, 1, 0},  //
             }};
@@ -294,10 +300,10 @@ namespace rpl {
             out.y = in.x * M.m[0][1] + in.y * M.m[1][1] + in.z * M.m[2][1] + M.m[3][1];
             out.z = in.x * M.m[0][2] + in.y * M.m[1][2] + in.z * M.m[2][2] + M.m[3][2];
 
-            float w = in.x * M.m[0][3] + in.y * M.m[1][3] + in.z * M.m[2][3] + /* in.z = 1 */ M.m[3][3]; 
+            float w = in.x * M.m[0][3] + in.y * M.m[1][3] + in.z * M.m[2][3] + M.m[3][3]; 
  
-            // normalize if w is different than 1 (convert from homogeneous to Cartesian coordinates)
-            if (w != 1) { 
+            // normalize if w is different than 0 (convert from homogeneous to Cartesian coordinates)
+            if (w != 0) { 
                 out.x /= w; 
                 out.y /= w; 
                 out.z /= w; 

@@ -8,184 +8,170 @@
 
 #include "rpl/engine.h"
 
-
-class MyTarget : public rpl::TargetInterface<char> 
+class MyTarget : public rpl::TargetInterface<char>
 {
 public:
-    MyTarget(int w, int h): 
-        width(w),
-        height(h)
+    MyTarget(int w, int h) : TargetInterface(w, h)
     {
-        for(int i=0; i<h; i++) {
-            char * subVector;
-            for(int j=0; j<w; j++)
-                subVector[j] = '.';
-            buff[i] = subVector;
+        buff = new char *[h];
+        for (int r = 0; r < h; r++)
+        {
+            char *subVector = new char[w];
+            for (int c = 0; c < w; c++)
+                subVector[c] = '.';
+            buff[r] = subVector;
         }
     }
 
-    ~MyTarget() {}
+    ~MyTarget() { delete[] buff; }
 
 public:
-
-    void Set(int row, int col, char val) 
+    void Set(int row, int col, char val) const
     {
-        std::cout << "Setting in target: ["<< row <<", "<<col<<"] ("<< val <<") : " <<  val <<std::endl;
-        if (row >= 0 && row < height && col >=0 && col < width)
+        std::cout << " ************ " <<std::endl;
+        std::cout << "Setting in target: [" << row << ", " << col << "]  ( val: " << val << ", SW: " <<ScreenWidth() << ", SH: "<< ScreenHeight() <<") : " << std::endl;
+        if (row >= 0 && row < ScreenHeight() && col >= 0 && col < ScreenWidth()) {
+            std::cout <<"Current val: "<< buff[row][col] << std::endl;
             buff[row][col] = val;
+        }
+        std::cout << " ************ " <<std::endl;
     }
 
-    char Get(int row, int col) 
+    char Get(int row, int col) const
     {
+        if (buff[row][col] != '.')
+            std::cout << "Getting from target at ["<<row<<", "<<col<<"] : " << buff[row][col] << std::endl;
         return buff[row][col];
     }
 
-    void Print() 
-    {        
+    void Print() const
+    {
         std::ofstream myfile;
 
-        std::remove("../test.txt");
-        myfile.open ("../test.txt");
+        //if (!std::remove("../test.txt")) return;
+        std::cout << "ok" << std::endl;
+        myfile.open("../test.txt");
 
         // frame
         myfile << '+';
-        for (int c=0; c<width; ++c)
-            myfile<< '-';
+        for (int c = 0; c < ScreenWidth(); ++c)
+            myfile << '-';
         myfile << '+' << '\n';
         //
 
-
-        for (int r=0; r<height; ++r) {
+        for (int r = 0; r < ScreenHeight(); ++r)
+        {
             myfile << '|'; // frame
-            for (int c=0; c<width; ++c) {
-                myfile << Get(r,c) ;
+            for (int c = 0; c < ScreenWidth(); ++c)
+            {
+                myfile << Get(r, c);
             }
             myfile << '|'; // frame
             myfile << '\n';
         }
 
-
         // frame
         myfile << '+';
-        for (int c=0; c<width; ++c) 
-            myfile<< '-';
-        myfile << '+'<< '\n';
+        for (int c = 0; c < ScreenWidth(); ++c)
+            myfile << '-';
+        myfile << '+' << '\n';
         //
 
         myfile.flush();
     }
-
-private:
-    int width, height;
-    char** buff;
-
-
 };
 
-
-
-class MyEngine : public rpl::Engine<char> 
+class MyEngine : public rpl::Engine<char>
 {
-    private:
-        int i = 0;
-        rpl::Mesh::Mesh mesh;
-    public:
-        MyEngine(int32_t width, int32_t height, MyTarget* target) : Engine(width, height, target) 
+private:
+    int i = 0;
+    rpl::Mesh::Mesh mesh;
+
+public:
+    MyEngine(const MyTarget *target) : Engine(target) {}
+
+public:
+    bool OnCreate() final
+    {
+
+        rpl::Math::Vector3D v1 = {1, -1, 1.5};
+        rpl::Math::Vector3D v2 = {1, 1, 1.1};
+        rpl::Math::Vector3D v3 = {-1, 1, 1.5};
+        rpl::Math::Vector3D v4 = {-1, -1, 1.9};
+
+        mesh.triangles.push_back({{v1, v2, v3}});
+        mesh.triangles.push_back({{v1, v3, v4}});
+        std::cout << "------------------" << std::endl;
+        std::cout << "INITIAL TRIANGLES: " << std::endl;
+        for (auto &triangle : mesh.triangles)
         {
-
+            for (auto &p : triangle.points)
+                std::cout << p << std::endl;
+            std::cout << std::endl;
         }
-    
-    public: 
-        bool OnCreate() final {
+        std::cout << "------------------" << std::endl
+                  << std::endl;
 
-            rpl::Math::Vector3D v1 = {1,-1,1.5};
-            rpl::Math::Vector3D v2 = {1,1,1.1};
-            rpl::Math::Vector3D v3 = {-1,1,1.5};
-            rpl::Math::Vector3D v4 = {-1,-1,1.9};       
-     
-            mesh.triangles.push_back( {{v1, v2, v3}});
-            mesh.triangles.push_back( {{v1, v3, v4}});
+        // projection matrix
+        rpl::Math::Matrix4D projectionMatrix = rpl::Math::perspective(1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 2.0f);
 
-            // rpl::Math::Matrix4D worldToCamera = {
-            //     0,0,0,0,
-            //     0,0,0,0,
-            //     0,0,0,0,
-            //     0,-10,-20,0,
-            // };
-
-            // std::cout << "------------------"<<std::endl;
-            // std::cout << "INITIAL TRIANGLES: " <<std::endl;
-            // for( auto &triangle: mesh.triangles) {
-            //     for (auto & p : triangle.points)
-            //         std::cout<<p<<std::endl;
-            //     std::cout << std::endl;
-            // }
-            // std::cout << "------------------"<<std::endl<<std::endl;
+        rpl::Math::Matrix4D transformations = //rpl::Math::identity();
+            rpl::Math::scale({ 20.0f, 20.0f, 1.9f});
 
 
-            // projection matrix
-            //rpl::Math::Matrix4D projectionMatrix = rpl::Math::perspective_fov(90.f, 0.1f ,100.0f);
-            rpl::Math::Matrix4D projectionMatrix = rpl::Math::perspective(1,-1,1,-1,1,2);
-            rpl::Math::Matrix4D transformations = rpl::Math::identity();
-                rpl::Math::MatrixMultiply(
-                rpl::Math::translation({ (float)ScreenWidth()/2, (float)ScreenHeight()/2, 0.0f}),
-                rpl::Math::scale({1.3f, 1.3f, 1.0f})
-            );
+        for (auto &triangle : mesh.triangles)
+        {
+            rpl::Math::Vector3D transformedP[3], projectedP[3];
 
-//            rpl::Math::Matrix4D  transformInverse = rpl::Math::transpose(rpl::Math::invert(transformationMatrix));
+            // 3D -> 2D projection each vector
+            for (int i = 0; i < 3; ++i)
+            {
+                rpl::Math::MultMatrixVector(triangle.points[i], transformedP[i], transformations);
 
-            for( auto &triangle: mesh.triangles) {
-                rpl::Math::Vector3D translatedP[3], scaledP[3], projectedP[3];
+                //transformedP[i].z += 3.0f;
 
-                // 3D -> 2D projection each vector
-                for (int i=0; i<3; ++i) {
-                    //rpl::Math::MultMatrixVector(triangle.points[i], toCameraPoints[i], worldToCamera);
-                    rpl::Math::MultMatrixVector(triangle.points[i], translatedP[i], transformations ); 
-                    // rpl::Math::MultMatrixVector(translatedP[i], scaledP[i], scaleMatrix ); 
-                    // rpl::Math::MultMatrixVector(scaledP[i], projectedP[i], projectionMatrix);
-                   // rpl::Math::MultMatrixVector(toCameraPoints[i], projectedPoints[i], projectionMatrix);
+                rpl::Math::MultMatrixVector(transformedP[i], projectedP[i], projectionMatrix);
 
-                    rpl::Math::MultMatrixVector(translatedP[i], projectedP[i], projectionMatrix);
-
-                    // if (projectedPoints[i].w != 1) {
-                    //     projectedPoints[i].x /= projectedPoints[i].w;
-                    //     projectedPoints[i].y /= projectedPoints[i].w;
-                    //     projectedPoints[i].z /= projectedPoints[i].w;
-                    // }
-                }
-
-
-                // std::cout << "------------------"<<std::endl;
-                // std::cout << "TRANSFORMED: " <<std::endl;
-                // for (auto & p : transformedPoints)
-                //     std::cout<<p<<std::endl;
-                // std::cout << "------------------"<<std::endl<<std::endl;
-
-                // std::cout << "------------------"<<std::endl;
-                // std::cout << "PROJECTION: " <<std::endl;
-                // for (auto & p : projectedP)
-                //     std::cout<<p<<std::endl;
-                // std::cout << "------------------"<<std::endl<<std::endl;
-
-                DrawTriangle(projectedP);
+                projectedP[i].x += 1.0f;
+                projectedP[i].y += 1.0f;
+                projectedP[i].x *= 0.5f * (float)ScreenHeight();
+                projectedP[i].y *= 0.5f * (float)ScreenWidth();
             }
 
-            return true;
+            std::cout << "------------------" << std::endl;
+            std::cout << "TRANSFORMED: " << std::endl;
+            for (auto &p : transformedP)
+                std::cout << p << std::endl;
+
+            std::cout << "------------------" << std::endl
+                        << std::endl;
+
+            std::cout << "------------------" << std::endl;
+            std::cout << "PROJECTED: " << std::endl;
+            for (auto &p : projectedP)
+                std::cout << p << std::endl;
+
+            std::cout << "------------------" << std::endl
+                        << std::endl;
+
+            DrawTriangle(projectedP);
         }
 
-        void OnDestroy() final {
-        }
+        return true;
+    }
+
+    void OnDestroy() final
+    {
+    }
 };
 
-
-
-int main(int, char**) {
-    MyTarget myTarget(150, 50);
-    MyEngine myEngine(150, 50, &myTarget);
+int main(int, char **)
+{
+    const MyTarget myTarget(150, 50);
+    MyEngine myEngine(&myTarget);
 
     myEngine.Run();
 
     myTarget.Print();
     return 0;
-
 }

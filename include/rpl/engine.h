@@ -14,27 +14,33 @@ namespace rpl {
     template <typename target_t>
     class Engine {
     public:
-        Engine(int32_t width, int32_t height, TargetInterface<target_t>* target):
-            width_(width),
-            height_(height),
-            zBuff(width*height, 10000000) 
+        Engine(const TargetInterface<target_t>* target)
         {
             target_ = target;
+            zBuff = new float*[ScreenHeight()];
+            for(int i=0; i<ScreenHeight(); i++) {
+                float * subArr = new float[ScreenWidth()];
+                for(int j=0; j<ScreenWidth(); j++)
+                    subArr[j] = 1000000000000.0f;
+                zBuff[i] = subArr;
+            }
 
             can_run = true;
-
         }
 
-
-    public:
-        ~Engine() { }
+        ~Engine()
+        { 
+            for(int i=0; i<ScreenHeight(); i++) 
+                delete[] zBuff[i];
+            delete zBuff;
+        }
     public:
         virtual bool OnCreate()  /*user defined*/   = 0;
         virtual void OnDestroy() /*user defined*/   = 0;
     public:
 
-        int32_t ScreenWidth() { return width_; }
-        int32_t ScreenHeight() { return height_; }
+        int32_t ScreenWidth() { return target_->ScreenWidth(); }
+        int32_t ScreenHeight() { return target_->ScreenHeight(); }
 
         void Run() {
 
@@ -137,48 +143,45 @@ namespace rpl {
             // std::cout << "------------------"<<std::endl<<std::endl;
 
             // compute only in bounding box!
-            for( int row=boundingBoxMin.x; row<boundingBoxMax.x; ++row) 
+            //for( int row=boundingBoxMin.x; row<boundingBoxMax.x; ++row) 
+            for( int row=0; row<ScreenHeight(); ++row) 
             {
-                if (row >= 0 && row <= height_)  
+                if (row >= 0 && row <= ScreenHeight())  
                 {
-                    for (int col=boundingBoxMin.y; col<boundingBoxMax.y; ++col) 
+                    //for (int col=boundingBoxMin.y; col<boundingBoxMax.y; ++col) 
+                    for (int col=0; col<ScreenWidth(); ++col) 
                     {
-                        if (col >=0  && col <= width_) 
-                        {
+                        if (col >=0  && col <= ScreenWidth()) 
+                        {   
+                            rpl::Math::Vector2D currPoint = {(float)row,(float)col};
 
-                            rpl::Math::Vector2D currentPoint = {(float)row,(float)col} ;
-                            auto bcs = BaryCentrics(vertices, currentPoint );
+                            auto bcs = BaryCentrics(vertices, currPoint );
 
                             if (bcs.x >=0 && bcs.x <=1 && 
                                 bcs.y >=0 && bcs.y <=1 && 
                                 bcs.z >=0 && bcs.z <=1) 
                             {
                                 // point inside triangle!
-                                // std::cout << "------------------"<<std::endl;
-                                // std::cout << "BARYCENTRICS FOR POINT: " << currentPoint <<std::endl;
-                                // std::cout << bcs <<std::endl;
-                                // std::cout << "POINT IS IN TRIANGLE" <<std::endl;                        
+                                std::cout << "------------------"<<std::endl;
+                                // std::cout << "BARYCENTRICS FOR POINT: " << row<< ", "<< col <<std::endl;
+                                // std::cout << bcs.x << ", "<< bcs.y << ", "<< bcs.z<<std::endl; 
+                                std::cout << "POINT "<< currPoint <<" IS IN TRIANGLE" <<std::endl;                        
 
-                                float z = InterpolateDepth( vertices, currentPoint, bcs );
-                                // std::cout << "Z IS: " << z <<std::endl;                        
-                                // std::cout << "Z BUFF [ x*width_ + y] IS: " << zBuff[ x * width_ + y] << " (where x*width_ + y = "<< x*width_ + y << ')' <<std::endl; 
+                                float z = InterpolateDepth( vertices, {(float)row,(float)col}, bcs );
+                                std::cout << "Z IS: " << z <<  " and Z_BUFF["<<row<<"]["<<col<<"] IS: " << zBuff[row][col] <<std::endl; 
 
                                 
-                                if (z <= zBuff[ row * width_ + col] ) {
-                                    zBuff[ row * width_ + col] = z;
-                                    
+                                if (z <= zBuff[row][col] ) {
+                                    zBuff[row][col] = z;
 
                                     // SHADERRRR
                                     auto shader = [&](float z_)   
                                     {
                                         char arr[] = {'0','1','2','3','4','5','6','7','8','9'};
                                         int iz = std::round(z);
+                                        std::cout << "SHADER returns "<< arr[abs((iz % 10))] << " for Z = " << iz << std::endl;
                                         return arr[abs((iz % 10))]; 
                                     };
-
-                                    std::cout << "SHADER(Z): "<<shader(z) << std::endl;
-                                    // std::cout << "String Shader(z)"  << std::to_string(shader(z)) << std::endl;
-                                    //std::cout << " 0 + SHADER(Z): "<< '0'+shader(z) << std::endl;
 
                                     target_->Set(row, col, shader(z));
                                     std::cout << "------------------"<<std::endl;
@@ -195,8 +198,8 @@ namespace rpl {
         int32_t width_, height_;
 
         std::vector<target_t> buff;
-        std::vector<int32_t> zBuff;
+        float** zBuff;
 
-        TargetInterface<target_t>* target_;
+        const TargetInterface<target_t>* target_;
     };
 }
