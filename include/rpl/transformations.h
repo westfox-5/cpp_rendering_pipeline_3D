@@ -1,4 +1,4 @@
-#pragma once
+#pragma once // include only one time at compile-time
 
 #include "math.h"
 
@@ -51,8 +51,16 @@ namespace rpl::Transformations {
 
     static rpl::Math::Matrix4D Perspective(const float right, const float left, const float bottom, const float top, const float zNear, const float zFar) {
         Matrix4D m;
+        // m.m[0][0] = (2 * zNear) / (right-left);
+        // m.m[0][2] =  (right+left) / (right-left);
+        // m.m[1][1] = (2 * zNear) / (top-bottom);
+        // m.m[1][2] = (top+bottom) / (top-bottom);
+        // m.m[2][2] = -(zFar + zNear) / (zFar-zNear);
+        // m.m[2][3] = (-2 * zNear * zFar ) / (zFar - zNear);
+        // m.m[3][2] = -1;
+
         m.m[0][0] = (2 * zNear) / (right-left);
-        m.m[0][2] =  -(right+left) / (right-left);
+        m.m[0][2] = -(right+left) / (right-left);
         m.m[1][1] = (2 * zNear) / (bottom-top);
         m.m[1][2] = -(bottom+top) / (bottom-top);
         m.m[2][2] = (zFar + zNear) / (zFar-zNear);

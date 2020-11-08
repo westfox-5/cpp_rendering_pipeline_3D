@@ -10,20 +10,17 @@
 
 #include "math.h"
 
-namespace rpl {
+namespace rpl::Mesh {
+    struct Triangle {
+        std::array<rpl::Math::Vector3D, 3> points;
 
-    namespace Mesh {
-        struct Triangle {
-            std::array<rpl::Math::Vector3D, 3> points;
+        Triangle(std::array<rpl::Math::Vector3D, 3> p): points(p) {}
+    };
 
-            Triangle(std::array<rpl::Math::Vector3D, 3> p): points(p) {}
-        };
+    struct Mesh {
+        std::vector<rpl::Mesh::Triangle> triangles;
 
-        struct Mesh {
-            std::vector<rpl::Mesh::Triangle> triangles;
-
-            ~Mesh() {}
-        };
-    }
+        ~Mesh() {}
+    };
 }
 
