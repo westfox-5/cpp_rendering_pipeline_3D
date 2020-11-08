@@ -4,9 +4,9 @@
 #include <vector>
 #include <algorithm>
 
-#include <fstream>
 
 #include "rpl/engine.h"
+
 
 class MyTarget : public rpl::TargetInterface<char>
 {
@@ -28,20 +28,20 @@ public:
 public:
     void Set(int row, int col, char val) const
     {
-        std::cout << " ************ " << std::endl;
-        std::cout << "Setting in target: [" << row << ", " << col << "]  ( val: " << val << ", SW: " << ScreenWidth() << ", SH: " << ScreenHeight() << ") : " << std::endl;
+        //std::cout << " ************ " << std::endl;
+        //std::cout << "Setting in target: [" << row << ", " << col << "]  ( val: " << val << ", SW: " << ScreenWidth() << ", SH: " << ScreenHeight() << ") : " << std::endl;
         if (row >= 0 && row < ScreenHeight() && col >= 0 && col < ScreenWidth())
         {
-            std::cout << "Current val: " << buff[row][col] << std::endl;
+            //std::cout << "Current val: " << buff[row][col] << std::endl;
             buff[row][col] = val;
         }
-        std::cout << " ************ " << std::endl;
+        //std::cout << " ************ " << std::endl;
     }
 
     char Get(int row, int col) const
     {
-        if (buff[row][col] != '.')
-            std::cout << "Getting from target at [" << row << ", " << col << "] : " << buff[row][col] << std::endl;
+        //if (buff[row][col] != '.')
+        //std::cout << "Getting from target at [" << row << ", " << col << "] : " << buff[row][col] << std::endl;
         return buff[row][col];
     }
 
@@ -49,7 +49,6 @@ public:
     {
         std::ofstream myfile;
 
-        //if (!std::remove("../test.txt")) return;
         std::cout << "ok" << std::endl;
         myfile.open("../test.txt");
 
@@ -82,60 +81,57 @@ public:
     }
 };
 
+
 class MyEngine : public rpl::Engine<char>
 {
 private:
     int i = 0;
     rpl::Mesh::Mesh mesh;
+    rpl::Math::Matrix4D mTransformations, mProjection;
 
 public:
-    MyEngine(const MyTarget *target) : Engine(target) {}
+    MyEngine(const MyTarget *target, std::function<char(float)> shader) : Engine(target, shader) {}
 
 public:
     bool OnCreate() final
     {
         rpl::Math::Vector3D v1 = {1, -1, 1.5};
-        rpl::Math::Vector3D v2 = {1,  1, 1.1};
+        rpl::Math::Vector3D v2 = {1, 1, 1.1};
         rpl::Math::Vector3D v3 = {-1, 1, 1.5};
-        rpl::Math::Vector3D v4 = {-1,-1, 1.9};
+        rpl::Math::Vector3D v4 = {-1, -1, 1.9};
 
         mesh.triangles.push_back({{v1, v2, v3}});
         mesh.triangles.push_back({{v1, v3, v4}});
 
-        std::cout << "------------------" << std::endl;
-        std::cout << "INITIAL TRIANGLES: " << std::endl;
-        for (auto &triangle : mesh.triangles)
-        {
-            for (auto &p : triangle.points)
-                std::cout << p << std::endl;
-            std::cout << std::endl;
-        }
-        std::cout << "------------------" << std::endl
-                  << std::endl;
-        
         // projection matrix
-        //rpl::Math::Matrix4D projectionMatrix = rpl::Math::Perspective(1.0f, -1.0f, 1.0f, -1.0f, .1f, 2.f);
-        rpl::Math::Matrix4D projectionMatrix = rpl::Math::Perspective(-1.0f, 1.0f, -1.0f, 1.0f, 1.f, 2.f);
+        
+        float b, t, l ,r, near, far; 
+        r = b = 1;
+        t = l = -r;
+        near = 1;
+        far = 2;
 
-        rpl::Math::Matrix4D scaling = rpl::Math::Scale({80.f, 80.f, .8f});
+        //mProjection = rpl::Transformations::Perspective(r, l, b, t, near, far);
+        mProjection = rpl::Transformations::Projection(90, near, far);
+        mTransformations = rpl::Transformations::Scaling({60, 30, 1});
+            
 
         for (auto &triangle : mesh.triangles)
         {
-            rpl::Math::Vector3D transformedP[3];
-            rpl::Math::Vector3D projectedP[3];
-             
+            std::array<rpl::Math::Vector3D, 3> transformedP;
+            std::array<rpl::Math::Vector3D, 3> projectedP;
 
-            // 3D -> 2D projection each vector
             for (int i = 0; i < 3; ++i)
             {
-                rpl::Math::MultMatrixVector3(triangle.points[i], transformedP[i], scaling);
-                rpl::Math::MultMatrixVector3(transformedP[i], projectedP[i], projectionMatrix);
+                rpl::Math::MultPointMatrix(triangle.points[i], transformedP[i], mTransformations);
+                rpl::Math::MultPointMatrix(transformedP[i], projectedP[i], mProjection);
 
                 // Offset into the screen
-                projectedP[i].x +=  (float)ScreenHeight() / 2;
-                projectedP[i].y +=  (float)ScreenWidth() / 2;
-            }
+                projectedP.at(i).x +=  (float)ScreenWidth() / 2;
+                projectedP.at(i).y +=  (float)ScreenHeight() / 2;
 
+                //projectedP.at(i).z = 1 / projectedP.at(i).z;
+            }
 
             DrawTriangle(projectedP);
         }
@@ -150,10 +146,20 @@ public:
 
 int main(int, char **)
 {
-    const MyTarget myTarget(200, 72);
-    MyEngine myEngine(&myTarget);
+    const MyTarget myTarget(150, 50);
+    auto ShaderFunc = [&](float z)   
+    {
+        char arr[] = {'0','1','2','3','4','5','6','7','8','9'};
+        int idx = abs( (int)std::floor(z) % 10);
+        //std::cout << "SHADER returned "<< arr[ idx ] << " for Z = " << z_ << std::endl;
+        return arr[ idx ]; 
+    };
+    
+    MyEngine myEngine(&myTarget, ShaderFunc);
+
     myEngine.Run();
 
     myTarget.Print();
+
     return 0;
 }

@@ -13,13 +13,14 @@
 namespace rpl {
 
     namespace Mesh {
-
         struct Triangle {
-            rpl::Math::Vector3D points[3];
+            std::array<rpl::Math::Vector3D, 3> points;
+
+            Triangle(std::array<rpl::Math::Vector3D, 3> p): points(p) {}
         };
 
         struct Mesh {
-            std::vector<rpl::Mesh::Triangle> triangles; // indexed by faces[i]
+            std::vector<rpl::Mesh::Triangle> triangles;
 
             ~Mesh() {}
         };

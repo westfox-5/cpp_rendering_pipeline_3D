@@ -2,15 +2,13 @@
 
 #include <cmath>
 
-#define PI 3.141592653589793238462643383279502884L 
-
 namespace rpl {
     namespace Math {
 
         struct Vector2D {
             float x, y;
 
-            Vector2D() {}
+            Vector2D() : Vector2D(0, 0) {}
             Vector2D(float x, float y) : x(x), y(y) {}
             Vector2D(const Vector2D & other) : x(other.x), y(other.y) {}
 
@@ -37,12 +35,12 @@ namespace rpl {
             return os; 
         }
 
-        struct Vector3D {
-            float x, y, z;
+        struct Vector3D : public Vector2D {
+            float z;
 
-            Vector3D() {}
-            Vector3D(float x, float y, float z) : x(x), y(y), z(z) {}
-            Vector3D(const Vector3D & other) : x(other.x), y(other.y), z(other.z) {}
+            Vector3D() : Vector3D(0, 0, 0) {}
+            Vector3D(float x, float y, float z) : Vector2D(x, y), z(z) {}
+            Vector3D(const Vector3D & other) : Vector2D(other.x, other.y), z(other.z) {}
 
             
             
@@ -80,7 +78,7 @@ namespace rpl {
         struct Vector4D {
             float x, y, z, w;
 
-            Vector4D() {}
+            Vector4D() : Vector4D(0, 0, 0, 0) {}
             Vector4D(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {}
             Vector4D(const Vector3D &v3D, float w) : x(v3D.x), y(v3D.y), z(v3D.z), w(w) {}
             Vector4D(const Vector4D &other) : x(other.x), y(other.y), z(other.z), w(other.w) {}
@@ -118,6 +116,8 @@ namespace rpl {
 
         struct Matrix4D {
             float m[4][4];
+
+            Matrix4D() : m{0} {}
 
             inline Vector4D getRow(int y) const { 
                 return {
@@ -222,7 +222,6 @@ namespace rpl {
                 return true;
             }
 
-
             rpl::Math::Matrix4D operator*(const Matrix4D &M) const {
                 Matrix4D mult;
 
@@ -236,92 +235,43 @@ namespace rpl {
                 mult.m[1][2] = this->m[1][0] * M.m[0][2] + this->m[1][1] * M.m[1][2] + this->m[1][2] * M.m[2][2] + this->m[1][3] * M.m[3][2];
                 mult.m[1][3] = this->m[1][0] * M.m[0][3] + this->m[1][1] * M.m[1][3] + this->m[1][2] * M.m[2][3] + this->m[1][3] * M.m[3][3];
 
-                mult.m[2][0] = this->m[2][0] * M.m[0][0] + this->m[2][2] * M.m[1][0] + this->m[2][2] * M.m[2][0] + this->m[2][3] * M.m[3][0];
-                mult.m[2][1] = this->m[2][0] * M.m[0][1] + this->m[2][2] * M.m[1][1] + this->m[2][2] * M.m[2][1] + this->m[2][3] * M.m[3][1];
-                mult.m[2][2] = this->m[2][0] * M.m[0][2] + this->m[2][2] * M.m[1][2] + this->m[2][2] * M.m[2][2] + this->m[2][3] * M.m[3][2];
-                mult.m[2][3] = this->m[2][0] * M.m[0][3] + this->m[2][2] * M.m[1][3] + this->m[2][2] * M.m[2][3] + this->m[2][3] * M.m[3][3];
+                mult.m[2][0] = this->m[2][0] * M.m[0][0] + this->m[2][1] * M.m[1][0] + this->m[2][2] * M.m[2][0] + this->m[2][3] * M.m[3][0];
+                mult.m[2][1] = this->m[2][0] * M.m[0][1] + this->m[2][1] * M.m[1][1] + this->m[2][2] * M.m[2][1] + this->m[2][3] * M.m[3][1];
+                mult.m[2][2] = this->m[2][0] * M.m[0][2] + this->m[2][1] * M.m[1][2] + this->m[2][2] * M.m[2][2] + this->m[2][3] * M.m[3][2];
+                mult.m[2][3] = this->m[2][0] * M.m[0][3] + this->m[2][1] * M.m[1][3] + this->m[2][2] * M.m[2][3] + this->m[2][3] * M.m[3][3];
 
-                mult.m[3][0] = this->m[3][0] * M.m[0][0] + this->m[3][2] * M.m[1][0] + this->m[3][2] * M.m[2][0] + this->m[3][3] * M.m[3][0];
-                mult.m[3][1] = this->m[3][0] * M.m[0][1] + this->m[3][2] * M.m[1][1] + this->m[3][2] * M.m[2][1] + this->m[3][3] * M.m[3][1];
-                mult.m[3][2] = this->m[3][0] * M.m[0][2] + this->m[3][2] * M.m[1][2] + this->m[3][2] * M.m[2][2] + this->m[3][3] * M.m[3][2];
-                mult.m[3][3] = this->m[3][0] * M.m[0][3] + this->m[3][2] * M.m[1][3] + this->m[3][2] * M.m[2][3] + this->m[3][3] * M.m[3][3];
+                mult.m[3][0] = this->m[3][0] * M.m[0][0] + this->m[3][1] * M.m[1][0] + this->m[3][2] * M.m[2][0] + this->m[3][3] * M.m[3][0];
+                mult.m[3][1] = this->m[3][0] * M.m[0][1] + this->m[3][1] * M.m[1][1] + this->m[3][2] * M.m[2][1] + this->m[3][3] * M.m[3][1];
+                mult.m[3][2] = this->m[3][0] * M.m[0][2] + this->m[3][1] * M.m[1][2] + this->m[3][2] * M.m[2][2] + this->m[3][3] * M.m[3][2];
+                mult.m[3][3] = this->m[3][0] * M.m[0][3] + this->m[3][1] * M.m[1][3] + this->m[3][2] * M.m[2][3] + this->m[3][3] * M.m[3][3];
 
                 return mult;
 
             }
-
         };
+
         static Matrix4D Identity() {
-            return {{
-                {1, 0, 0, 0 },
-                {0, 1, 0, 0},
-                {0, 0, 1, 0},
-                {0, 0, 0, 1}
-            }};
+            Matrix4D m;
+            m.m[0][0] = 1;
+            m.m[1][1] = 1;
+            m.m[2][2] = 1;
+            m.m[3][3] = 1;
+            return m;
         } 
 
-        static Matrix4D Translate(const Vector3D &t) {
-            return {{
-                {1, 0, 0, 0}, 
-                {0, 1, 0, 0},
-                {0, 0, 1, 0}, 
-                {t.x, t.y, t.z, 1}
-            }};
-        }
-
-        static Matrix4D Scale(const Vector3D &scale) {
-            return {{
-                {scale.x, 0, 0, 0},
-                {0, scale.y, 0, 0},
-                {0, 0, scale.z, 0},
-                {0, 0, 0, 1}
-            }};
-        }
-
-        static Matrix4D Orthographic(const float right, const float left, const float bottom, const float top, const float zNear, const float zFar) {
-            return {{
-                {2 / (right-left), 0, 0, -(right+left) / (right-left)},  
-                {0, 2 / (top-bottom), 0, -(top+bottom) / (top-bottom)},  
-                {0, 0, 2 / (zFar - zNear), -(zFar + zNear) / (zFar - zNear)},  
-                {0, 0, 0, 1}  
-            }};
-        }
-
-        static Matrix4D Perspective(const float right, const float left, const float bottom, const float top, const float zNear, const float zFar) {
-            return {{
-                { (2 * zNear) / (right-left), 0, -(right+left) / (right-left), 0},  
-                {0, (2 * zNear) / (bottom-top), -(bottom+top) / (bottom-top), 0},  
-                {0, 0, (zFar + zNear) / (zFar-zNear), (-2 * zFar * zNear) / (zFar - zNear)},  
-                {0, 0, 1, 0},
-            }};
-        }
-
-        static void MultMatrixVector3(const Vector3D &in, Vector3D &out, Matrix4D &M) {
+        static void MultPointMatrix(const Vector3D &in, Vector3D &out, Matrix4D &M) {
             out.x = in.x * M.m[0][0] + in.y * M.m[1][0] + in.z * M.m[2][0] + M.m[3][0];
             out.y = in.x * M.m[0][1] + in.y * M.m[1][1] + in.z * M.m[2][1] + M.m[3][1];
             out.z = in.x * M.m[0][2] + in.y * M.m[1][2] + in.z * M.m[2][2] + M.m[3][2];
-
             const float w = in.x * M.m[0][3] + in.y * M.m[1][3] + in.z * M.m[2][3] + M.m[3][3];
-            if (w != 0.0f) {
-                out.x /= w; out.y /= w; out.z /= w;
+            if (w != 1) {
+                out.x /= w;
+                out.y /= w;
+                out.z /= w;
             }
         }
 
-        static void MultMatrixVector4(const Vector3D &in, Vector4D &out, Matrix4D &M, float w = 1.f) {
-            out.x = in.x * M.m[0][0] + in.y * M.m[1][0] + in.z * M.m[2][0] + M.m[3][0] * w;
-            out.y = in.x * M.m[0][1] + in.y * M.m[1][1] + in.z * M.m[2][1] + M.m[3][1] * w;
-            out.z = in.x * M.m[0][2] + in.y * M.m[1][2] + in.z * M.m[2][2] + M.m[3][2] * w;
-            out.w = in.x * M.m[0][3] + in.y * M.m[1][3] + in.z * M.m[2][3] + M.m[3][3] * w;
-        }
-
-        static void MultMatrixVector4(const Vector4D &in, Vector4D &out, Matrix4D &M) {
-            out.x = in.x * M.m[0][0] + in.y * M.m[1][0] + in.z * M.m[2][0] + in.w * M.m[3][0];
-            out.y = in.x * M.m[0][1] + in.y * M.m[1][1] + in.z * M.m[2][1] + in.w * M.m[3][1];
-            out.z = in.x * M.m[0][2] + in.y * M.m[1][2] + in.z * M.m[2][2] + in.w * M.m[3][2];
-            out.w = in.x * M.m[0][3] + in.y * M.m[1][3] + in.z * M.m[2][3] + in.w * M.m[3][3];
-        }
-
-        static Matrix4D transpose(const Matrix4D &M)
+        static Matrix4D Transpose(const Matrix4D &M)
         {
             Matrix4D transposed;
             for(int r=0;r<4;r++)    
@@ -330,4 +280,5 @@ namespace rpl {
             return transposed;
         }
     }
+
 }
