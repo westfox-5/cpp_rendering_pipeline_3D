@@ -10,40 +10,49 @@
  * Implement the engine:
  *  In the engine OnCreate() function, we can define the scene to render
  * 
- * 
  */
-
 
 class MyTarget : public rpl::Target<char>
 {
 public:
-    MyTarget(int w, int h) : Target(w, h) {}
+    MyTarget(int w, int h) : Target(w, h) { InitBuffer(); }
     ~MyTarget() {}
 
 public:
-    void Set(int row, int col, char val) const
+    void InitBuffer()
     {
-        //std::cout << "Setting in target: [" << row << ", " << col << "]  : " << val << std::endl;
-        if (row >= 0 && row < ScreenHeight() && col >= 0 && col < ScreenWidth())
+        buff = new char *[ScreenHeight()];
+        for (int32_t r = 0; r < ScreenHeight(); r++)
         {
-            //std::cout << "Current val: " << buff[row][col] << std::endl;
+            char *subVector = new char[ScreenWidth()];
+            for (int32_t c = 0; c < ScreenWidth(); c++)
+                subVector[c] = '.';
+            buff[r] = subVector;
+        }
+    }
+
+    void Set(int row, int col, char val)
+    {
+        if ( IsInBound(row, col) )
+        {
+#ifdef DEBUG_
+            std::cout << "Setting in target: [" << row << ", " << col << "]  : " << val << std::endl;
+#endif
             buff[row][col] = val;
         }
 
     }
 
-    char Get(int row, int col) const
+    char Get(int row, int col)
     {
-        //if (buff[row][col] != '.')
-        //std::cout << "Getting from target at [" << row << ", " << col << "] : " << buff[row][col] << std::endl;
         return buff[row][col];
     }
 
-    void Print() const
+    void Print()
     {
         std::ofstream myfile;
 
-        myfile.open("../test.txt");
+        myfile.open("../output.txt");
 
         // frame
         myfile << '+';
@@ -80,7 +89,7 @@ public:
 class MyEngine : public rpl::Engine<char>
 {
 public:
-    MyEngine(const MyTarget *target, std::function<char(float)> shader) : Engine(target, shader) {}
+    MyEngine(MyTarget *target, std::function<char(float)> shader) : Engine(target, shader) {}
 
 public:
     bool OnCreate() final
@@ -94,8 +103,8 @@ public:
         mesh.triangles.push_back({{v1, v2, v3}});
         mesh.triangles.push_back({{v1, v3, v4}});
 
-       // ApplyProjection     (rpl::Transformations::Perspective(1, -1, 1, -1, .1, 2) );
-        ApplyTransformation (rpl::Transformations::Scaling({ 150, 50, 1}) );
+        ApplyProjection     (rpl::Transformations::Perspective(1, -1, 1, -1, .1, 2));
+        ApplyTransformation (rpl::Transformations::Scaling({ 150, 50, 1}));
 
         DrawMesh(mesh);
 
@@ -112,16 +121,18 @@ public:
 
 int main(int, char **)
 {
-    const MyTarget myTarget(150, 50);
+    MyTarget myTarget(150, 50);
 
     auto ShaderFunc = [&](float z)
     {
         int i = std::abs((int)std::round(z) % 10);
-        //std::cout<< z << " - " << i << " - " << std::to_string(i) << std::endl;
+#ifdef DEBUG_
+        std::cout << z << " - " << i << " - " << std::to_string(i) << std::endl;
+#endif
         return std::to_string(i)[0];
     };
 
-    MyEngine myEngine(&myTarget, ShaderFunc);
+    MyEngine myEngine( &myTarget, ShaderFunc);
 
     myEngine.Run();
 

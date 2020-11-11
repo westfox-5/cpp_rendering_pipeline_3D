@@ -18,14 +18,14 @@ namespace rpl {
     template <typename target_t>
     class Engine {
     public:
-        Engine(const Target<target_t>* target,const std::function<target_t(float)> shader) :
+        Engine(Target<target_t> *target, const std::function<target_t(float)> shader) :
             target_(target),
             shader_(shader)
         {
             InitializeDepthBuffer();
 
             this->mTransformation = rpl::Math::Identity();
-            this->mProjection = rpl::Transformations::Perspective(1, -1, 1, -1, .1, 2);
+            this->mProjection = rpl::Transformations::Perspective(1, -1, 1, -1, 1, 2);
 
             can_run = true;
         }
@@ -37,8 +37,11 @@ namespace rpl {
             delete depth_buff;
         }
     public:
+        /* User scene definition */ 
         virtual bool OnCreate()  /*user defined*/   = 0;
+        /* User scene deletion */
         virtual void OnDestroy() /*user defined*/   = 0;
+        /* virtual void onUpdate() = 0 */ // for now we don't need to update the scene each frame, only display once
     public:
 
         int32_t ScreenWidth() { return target_->ScreenWidth(); }
@@ -57,9 +60,10 @@ namespace rpl {
 
         void ApplyProjection(rpl::Math::Matrix4D projectionMatrix)
         {
-            this->mProjection = projectionMatrix; //override
+            this->mProjection = projectionMatrix;
         }
 
+        /* Chains the given transformation to the existing one */
         void ApplyTransformation(rpl::Math::Matrix4D scaleMatrix)
         {
             rpl::Math::Matrix4D tmpMatrix = this->mTransformation;
@@ -68,12 +72,10 @@ namespace rpl {
             this->mTransformation = tmpMatrix;
         }
 
+        /* Compute transformations and projection of all triangles in the mesh*/ 
         void DrawMesh(rpl::Mesh::Mesh mesh)
         {
-            if (!&mesh) 
-            {
-                return;
-            }
+            if (!&mesh) return;
 
             for (auto &triangle : mesh.triangles)
             {
@@ -175,12 +177,13 @@ namespace rpl {
             int xMax, xMin, yMax, yMin;
             BoundingBox(xMax, xMin, yMax, yMin, vertices);
 
+#ifdef DEBUG_
             std::cout << "------------------"<<std::endl;
             std::cout << "BOUNDING BOX: " <<std::endl;
             std::cout << "x: [" << xMin << ", " << xMax <<"]" <<std::endl;
             std::cout << "y: [" << yMin << ", " << yMax <<"]" <<std::endl;
             std::cout << "------------------"<<std::endl<<std::endl;
-
+#endif
             rpl::Math::Vector3D zVals = {vertices[0].z, vertices[1].z, vertices[2].z};
             rpl::Math::Vector3D point = {0, 0, 0};
 
@@ -195,9 +198,14 @@ namespace rpl {
 
                     if ( bcs.x >= 0 && bcs.y >= 0 && bcs.z >= 0 )
                     {
+
                         const float oneOverZ = zVals.dotProduct(bcs * area);
                         const float z = 1 / oneOverZ;
-
+#ifdef DEBUG_
+                        std::cout << "Point " << point << " is in triangle. Depth: "<< z << " Z-Buff: "<< depth_buff[(int)point.y][(int)point.x] <<std::endl;
+                        std::cout << "Value from shader: "<< shader_(z) << std::endl;
+                        std::cout << "------------------"<<std::endl;
+#endif  
                         if (z < depth_buff[(int)point.y][(int)point.x]) {
                             depth_buff[(int)point.y][(int)point.x] = z;
 
@@ -216,7 +224,7 @@ namespace rpl {
         std::vector<target_t> buff;
         float** depth_buff;
     protected:
-        const Target<target_t>* target_;
+        Target<target_t>* target_;
         const std::function<target_t(float)> shader_;
     };
 }

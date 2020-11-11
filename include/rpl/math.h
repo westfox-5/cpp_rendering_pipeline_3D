@@ -20,8 +20,7 @@ namespace rpl::Math {
         const Vector2D operator/(float val) const { return Vector2D{x/val, y/val}; }
 
         float dotProduct(const Vector2D &b) { return x*b.x + y*b.y; }
-
-
+        
         const float length() const { return sqrtf(x*x + y*y); }
         void normalize() {
             const float l = length();
@@ -29,19 +28,12 @@ namespace rpl::Math {
         }
     };
 
-    std::ostream& operator<<(std::ostream& os, const rpl::Math::Vector2D v) { 
-        os << '[' << v.x << ", " << v.y << ']';
-        return os; 
-    }
-
     struct Vector3D : public Vector2D {
         float z;
 
         Vector3D() : Vector3D(0, 0, 0) {}
         Vector3D(float x, float y, float z) : Vector2D(x, y), z(z) {}
         Vector3D(const Vector3D & other) : Vector2D(other.x, other.y), z(other.z) {}
-
-        
         
         const Vector3D operator+(const Vector3D &val) const { return Vector3D{x+val.x, y+val.y, z+val.z}; }
         const Vector3D operator-(const Vector3D &val) const { return Vector3D{x-val.x, y-val.y, z-val.z}; }
@@ -51,16 +43,14 @@ namespace rpl::Math {
         const Vector3D operator*(float val) const { return Vector3D{x*val, y*val, z*val}; }
         const Vector3D operator/(float val) const { return Vector3D{x/val, y/val, z/val}; }
 
-        static Vector3D cross(const Vector3D &a, const Vector3D &b) {
-            return Vector3D {
-                a.y*b.z - a.z*b.y,
-                a.z*b.x - a.x*b.z,
-                a.x*b.y - a.y*b.x,
+        const Vector3D cross(const Vector3D &b) {
+            return Vector3D{
+                y*b.z - z*b.y,
+                z*b.x - x*b.z,
+                x*b.y - y*b.x,
             };
         }
         float dotProduct(const Vector3D &b) { return x*b.x + y*b.y + z*b.z; }
-        
-        
 
         const float length() const { return sqrtf(x*x + y*y + z*z); }
         void normalize() {
@@ -69,10 +59,6 @@ namespace rpl::Math {
         }
     };
 
-    std::ostream& operator<<(std::ostream& os, const rpl::Math::Vector3D v) { 
-        os << '[' << v.x << ", " << v.y << ", " << v.z << ']';
-        return os; 
-    }
 
     struct Vector4D {
         float x, y, z, w;
@@ -108,42 +94,17 @@ namespace rpl::Math {
         }
     };
 
-    std::ostream& operator<<(std::ostream& os, const rpl::Math::Vector4D v) { 
-        os << '[' << v.x << ", " << v.y << ", " << v.z << ", " << v.w << ']';
-        return os; 
-    } 
-
     struct Matrix4D {
         float m[4][4];
 
         Matrix4D() : m{0} {}
 
         inline Vector4D getRow(int y) const { 
-            return {
-                m[y][0],
-                m[y][1],
-                m[y][2],
-                m[y][3]
-            };
+            return { m[y][0], m[y][1], m[y][2], m[y][3] };
         }
         inline Vector4D getCol(int x) const { 
-            return {
-                m[0][x],
-                m[1][x],
-                m[2][x],
-                m[3][x]
-            };
+            return { m[0][x], m[1][x], m[2][x], m[3][x] };
         }
-
-        std::ostream& operator<<(std::ostream& os) const { 
-            for (int r = 0; r<4; ++r){
-                for (int c = 0; c<4; ++c)
-                    os << m[r][c];
-                os << std::endl; 
-            }
-            return os;
-        }
-
 
         float Determinant() 
         { //http://www.softwareandfinance.com/CPP/Matrix_Inverse.html
@@ -277,5 +238,32 @@ namespace rpl::Math {
             for(int c=0;c<4;c++)    
             transposed.m[r][c] = M.m[c][r];
         return transposed;
+    }
+
+
+
+    std::ostream& operator<<(std::ostream& os, const rpl::Math::Vector2D v) 
+    { 
+        os << '[' << v.x << ", " << v.y << ']';
+        return os; 
+    }
+    std::ostream& operator<<(std::ostream& os, const rpl::Math::Vector3D v) 
+    { 
+        os << '[' << v.x << ", " << v.y << ", " << v.z << ']';
+        return os; 
+    }
+    std::ostream& operator<<(std::ostream& os, const rpl::Math::Vector4D v) 
+    { 
+        os << '[' << v.x << ", " << v.y << ", " << v.z << ", " << v.w << ']';
+        return os; 
+    }
+    std::ostream& operator<<(std::ostream& os, const rpl::Math::Matrix4D m) 
+    { 
+        for (int r = 0; r<4; ++r){
+            for (int c = 0; c<4; ++c)
+                os << m.m[r][c];
+            os << std::endl; 
+        }
+        return os;
     }
 }

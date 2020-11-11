@@ -5,7 +5,8 @@
 using namespace rpl::Math;
 namespace rpl::Transformations {
 
-    static Matrix4D Translation(const rpl::Math::Vector3D &t) {
+    static Matrix4D Translation(const rpl::Math::Vector3D &t) 
+    {
         Matrix4D m;
         m.m[0][0] = 1;
         m.m[0][3] = t.x;
@@ -17,7 +18,8 @@ namespace rpl::Transformations {
         return m;
     }
 
-    static Matrix4D Scaling(const rpl::Math::Vector3D &scale) {
+    static Matrix4D Scaling(const rpl::Math::Vector3D &scale) 
+    {
         Matrix4D m;
         m.m[0][0] = scale.x;
         m.m[1][1] = scale.y;
@@ -26,7 +28,50 @@ namespace rpl::Transformations {
         return m;
     }
 
-    static rpl::Math::Matrix4D Projection(const float fov, const float z_near, const float z_far) {
+    static Matrix4D RotationX(const float theta)
+    {
+        float c = cos(theta);
+        float s = sin(theta);
+        Matrix4D m;
+        m.m[0][0] = 1;
+        m.m[1][1] = c;
+        m.m[1][2] = -s;
+        m.m[2][1] = s;
+        m.m[2][2] = c;
+        m.m[3][3] = 1;
+        return m;
+    }
+
+    static Matrix4D RotationY(const float theta)
+    {
+        float c = cos(theta);
+        float s = sin(theta);
+        Matrix4D m;
+        m.m[0][0] = c;
+        m.m[0][2] = -s;
+        m.m[1][1] = 1;
+        m.m[2][0] = s;
+        m.m[2][2] = c;
+        m.m[3][3] = 1;
+        return m;
+    }
+
+    static Matrix4D RotationZ(const float theta)
+    {
+        float c = cos(theta);
+        float s = sin(theta);
+        Matrix4D m;
+        m.m[0][0] = c;
+        m.m[10][1] = -s;
+        m.m[1][0] = s;
+        m.m[1][1] = c;
+        m.m[2][2] = 1;
+        m.m[3][3] = 1;
+        return m;
+    }
+
+    static rpl::Math::Matrix4D Projection(const float fov, const float z_near, const float z_far) 
+    {
         float scale = 1 / tan(fov * 0.5 * M_PI / 180);
         Matrix4D m;
         m.m[0][0] = scale;
@@ -37,7 +82,8 @@ namespace rpl::Transformations {
         return m;
     }
 
-    static rpl::Math::Matrix4D Orthographic(const float right, const float left, const float bottom, const float top, const float zNear, const float zFar) {
+    static rpl::Math::Matrix4D Orthographic(const float right, const float left, const float bottom, const float top, const float zNear, const float zFar) 
+    {
         Matrix4D m;
         m.m[0][0] = 2 / (right-left);
         m.m[0][3] =  -(right+left) / (right-left);
@@ -49,7 +95,8 @@ namespace rpl::Transformations {
         return m;
     }
 
-    static rpl::Math::Matrix4D Perspective(const float right, const float left, const float bottom, const float top, const float zNear, const float zFar) {
+    static rpl::Math::Matrix4D Perspective(const float right, const float left, const float bottom, const float top, const float zNear, const float zFar) 
+    {
         Matrix4D m;
         // m.m[0][0] = (2 * zNear) / (right-left);
         // m.m[0][2] =  (right+left) / (right-left);
