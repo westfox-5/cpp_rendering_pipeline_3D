@@ -9,7 +9,6 @@
 #include <cstdint>
 #include <vector>
 
-
 namespace rpl {
 
     struct Pixel {

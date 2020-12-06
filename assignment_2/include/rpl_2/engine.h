@@ -1,12 +1,10 @@
 #ifndef RASTERIZATION_H
 #define RASTERIZATION_H
+#include "mesh.h"
 
 #include<cmath>
 #include<vector>
 #include<array>
-
-#include "texture.h"
-#include "mesh.h"
 
 namespace rpl {
 
@@ -76,14 +74,23 @@ namespace rpl {
 
 		void render_mesh(const Mesh& mesh) {
 
-			// render all triangles of the mesh
-			for (Triangle &t: mesh.get_sorted_triangles()) {
+			std::vector<Triangle> tris = mesh.get_triangles();
 
+			// render all triangles of the mesh
+			for (Triangle &t: tris) {
 				// needs to pass mesh becaus it has the shader
 				render_triangle(t, mesh);
 			}
 
 		}
+
+		void save_to_file(const char* filename) {
+			Texture::write(filename, width, height, 3, screen);
+		}
+
+    	std::array<float,16> projection_matrix;
+	    
+	private:
 
     	void render_triangle(const Triangle& T, const Mesh& M) {
         	Vertex v1=T.points[0];
@@ -98,7 +105,6 @@ namespace rpl {
         	project(v2,ndc2);
         	project(v3,ndc3);
 
-	
 	
         	// at first sort the three vertices by y-coordinate ascending so v1 is the topmost vertice
         	if(ndc1[1] > ndc2[1]) {
@@ -285,14 +291,6 @@ namespace rpl {
 
 			}
     	}
-
-		void save_to_file(const char* filename) {
-			Texture::write(filename, width, height, 3, screen);
-		}
-
-    	std::array<float,16> projection_matrix;
-	    
-	private:
 	
     	float ndc2idxf(float ndc, int range) { return (ndc+1.0f)*(range-1)/2.0f; }
 	

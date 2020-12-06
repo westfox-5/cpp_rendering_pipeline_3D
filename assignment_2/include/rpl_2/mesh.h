@@ -1,9 +1,12 @@
-#pragma once
+#ifndef MESH_H
+#define MESH_H
 
+#include "texture.h"
+
+#include <array>
 #include <vector>
 #include <algorithm>
 
-#include "texture.h"
 namespace rpl {
 
     struct Vec2d {
@@ -22,42 +25,37 @@ namespace rpl {
         Vec3d np;
         Vec2d t; // texture coord
 
-        Vertex(Vec3d p, Vec3d np, Vec2d t);
+        Vertex() : p{}, np{}, t{} {}
+        Vertex(Vec3d p_, Vec3d np_, Vec2d t_) : p(p_), np(np_), t(t_) {}
     };
 
     struct Triangle {
-        Vertex points[3];
+        static const size_t MAX_SIZE = 3;
+
+        Vertex points[MAX_SIZE];
     };
 
     class Mesh {
     public:
-        Mesh();
+        Mesh(std::initializer_list<Triangle> tris) : triangles{tris} {} 
         ~Mesh() { delete texture; }
 
         void load_texture(const char* filename) {
             texture = new Texture(filename);
         }
 
-        void add_triangle(Triangle t) {
-            triangles.push_back(t);
-        }
-
-        std::vector<Triangle> get_sorted_triangles() const {
-            std::vector<Triangle> sorted;
-            std::copy(triangles.begin(),triangles.end(), sorted);
-            std::sort(sorted.begin(), sorted.end(), sortFn);
-            return sorted;
+        std::vector<Triangle> get_triangles() const {
+            return triangles;
         }
 
         rpl::Pixel sample_pixel(Vertex& v) const {
             return texture->sample_pixel(v.t.x, v.t.y);    
-        } 
+        }
     private:
         std::vector<Triangle> triangles;
         Texture* texture;
-
-        static bool sortFn( Vertex i, Vertex j) {
-            return (i.p.y < j.p.y); // y-ascending order
-        }
     };
 }
+
+
+#endif //MESH_H
