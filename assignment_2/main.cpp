@@ -14,8 +14,8 @@ struct MyVertex : public rpl::Vertex {
 
 
 int main() {
-    const int w=800;
-    const int h=800;
+    const int w=1024;
+    const int h=1024;
 
     Engine<Pixel> engine;
     engine.set_perspective_projection(-1,1,-1,1,1,2);
@@ -38,7 +38,7 @@ int main() {
 
     // Create Mesh object
     rpl::Mesh mesh({t1, t2});
-    mesh.load_texture("textures/texture_4.bmp");
+    mesh.load_texture("textures/texture_1.bmp");
     engine.render_mesh(mesh);
 
     /*
@@ -58,7 +58,7 @@ int main() {
 
     // Create Mesh object
     rpl::Mesh mesh2({r1, r2});
-    mesh2.load_texture("textures/texture_1.bmp");    
+    mesh2.load_texture("textures/texture_3.bmp");    
     engine.render_mesh(mesh2);
 
     engine.save_to_file("./out/result.bmp");
