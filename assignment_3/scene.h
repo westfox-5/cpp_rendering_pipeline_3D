@@ -2,21 +2,47 @@
 #define SCENE_H
 #include<memory>
 #include<utility>
+
+#include<math.h>
+#include<thread>
+#include<mutex>
+
 #include"rasterization.h"
 
+
+
+#include<iostream>
 namespace pipeline3D {
 
 
 const std::array<float,16> Identity{1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1};
 
+/*** Defines where to apply multithreads */
+
+/** Apply multithreading to the whole scene rendering: 
+ * 
+ *  divides the number of objects to render between the available threads.
+ *  each thread renders all its assigned objects
+*/
+const static int _MULTITHREADING_MODE_SCENE_   = 0;
+
+/** Apply multithreading to each triangle of each object:
+ * 
+ * 
+*/
+const static int _MULTITHREADING_MODE_TRIANGLES_  = 1;
 
 template<class target_t>
 class Scene
 {
 public:
 
-    Scene(): view_(Identity) {};
+    Scene(): view_(Identity), num_threads_(1), multithreading_mode_(_MULTITHREADING_MODE_SCENE_) {};
     std::array<float,16> view_;
+    
+    int num_threads_;
+
+    int multithreading_mode_;
 
     class Object{
     public:
@@ -78,13 +104,71 @@ public:
     auto end() {return objects.end();}
 
     void render(Rasterizer<target_t>& rasterizer) {
-        for (auto& o : objects) {
-            o.render(rasterizer,view_);
-        }
+
+        if (_MULTITHREADING_MODE_SCENE_ == multithreading_mode_) {
+
+            // calculate load of work per threads
+            
+            const int load_per_thread = (int)(std::floor(objects.size() / num_threads_));
+            int num_remaining_objs = objects.size() % num_threads_;
+
+
+            std::thread workers[num_threads_];
+            int num_objects_assigned = 0;
+
+            // assign for each thread its work
+            for (int thread_count = 0; thread_count < num_threads_; ++thread_count) {
+                
+                // if modulus > 0, give to the thread one more object 
+                // so that load is equally distributed
+                int actual_load = load_per_thread;
+                if (num_remaining_objs > 0) {
+                    ++actual_load;
+                    --num_remaining_objs;
+                }
+
+                // extract the vector of objects to assign
+                std::vector<Object> splitted(objects.begin() + num_objects_assigned, objects.begin() + (num_objects_assigned + actual_load));
+                
+                // increment the number of objects assigned so far
+                num_objects_assigned += actual_load;
+
+                // create the thread
+                //std::thread th( [this, rasterizer, splitted] { this->_fun_scene_mode_(std::move(splitted), rasterizer); } );
+                //workers.emplace_back( std::thread(&Scene::_fun_scene_mode_) );
+
+                auto functor = 
+                    [this]() ->void {this->_fun_scene_mode_();};
+
+                std::thread t1(functor);
+                workers[thread_count] = std::thread(functor);
+
+            }
+
+            for (auto &t: workers) { 
+                t.join();
+            }
+
+        } 
     }
+
+
 
 private:
     std::vector<Object> objects;
+    std::mutex mtx;
+    
+    void _fun_scene_mode_() {/*std::vector<Object> objects){/*, Rasterizer<target_t>&& rasterizer) {*/
+        mtx.lock();
+        std::cout << "works?" << std::endl;
+        mtx.unlock();
+        //std::cout << objects.size() << std::endl;
+        /*
+        for (auto& o : objects) {
+            o.render(*rasterizer,view_);
+        }
+        */
+    }
 };
 
 };

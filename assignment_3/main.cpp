@@ -1,16 +1,15 @@
 #include"rasterization.h"
 #include"scene.h"
 #include"read-obj.h"
+#include"timer.h"
 using namespace pipeline3D;
 
 #include<iostream>
-#include<chrono>
-
 
 using namespace std;
 
 
-
+    // g++ main.cpp read-obj.cpp -o main.out 
 
     struct my_shader{
          char operator ()(const Vertex &v)  {
@@ -23,6 +22,15 @@ using namespace std;
         const int w=150;
         const int h=50;
 
+        const int num_objects = 1000;
+        const int num_iterations = 1000;
+
+
+        const int num_worker_threads = 1;
+
+
+        Timer timer;
+
         my_shader shader;
         Rasterizer<char> rasterizer;
         rasterizer.set_perspective_projection(-1,1,-1,1,1,2);
@@ -30,15 +38,35 @@ using namespace std;
         std::vector<char> screen(w*h,'.');
         rasterizer.set_target(w,h,&screen[0]);
 
+        std::vector<std::vector<std::array<Vertex,3>>> objects;
+        
+        
 
-        std::vector<std::array<Vertex,3>> mesh = read_obj("cubeMod.obj");
-
-   
         Scene<char> scene;
         scene.view_={0.5f,0.0f,0.0f,0.7f,0.0f,0.5f,0.0f,0.7f,0.0f,0.0f,0.5f,0.9f,0.0f,0.0f,0.0f,1.0f};
-        scene.add_object(Scene<char>::Object(std::move(mesh),shader));
-        scene.render(rasterizer);
 
+        std::cout << "START reading "<< num_objects <<" objects"<< std::endl;
+        timer.reset();
+        
+        for (int i=0; i<num_objects; ++i) {
+            std::vector<std::array<Vertex,3>> mesh = read_obj("cubeMod.obj");
+            scene.add_object(Scene<char>::Object(std::move(mesh), shader));
+        }
+        
+
+        
+        std::cout << "END reading "<< num_objects <<" objects ["<< timer.elapsed() <<" sec]"<<std::endl;
+
+        std::cout << "START rendering with "<< scene.num_threads_ <<" threads"<< std::endl;
+        timer.reset();
+
+        for (int i=0; i<num_iterations; ++i) {
+            scene.render(rasterizer);
+        }
+
+        std::cout << "END rendering "<< num_iterations <<" times ["<< timer.elapsed() <<" sec]"<< std::endl;
+
+/*
 
         // print out the screen with a frame around it
         std::cout << '+';
@@ -55,6 +83,7 @@ using namespace std;
         for (int j=0; j!=w; ++j) std::cout << '-';
         std::cout << "+\n";
 
+*/
         return 0;
     }
 
