@@ -76,13 +76,18 @@ public:
                     auto v1=t[0];
                     auto v2=t[1];
                     auto v3=t[2];
+                    //mtx.lock();
                     transform(world,v1);
                     transform(view,v1);
                     transform(world,v2);
                     transform(view,v2);
                     transform(world,v3);
                     transform(view,v3);
+                    //mtx.unlock();
+
+                    //mtx.lock();
                     rasterizer.render_vertices(v1,v2,v3, shader_);
+                    //mtx.unlock();
                 }
             }
 
@@ -91,6 +96,8 @@ public:
             Mesh mesh_;
             Shader shader_;
             std::tuple<Textures...> textures_;
+
+            //std::mutex mtx;
         };
 
         std::unique_ptr<Object_impl> pimpl;
@@ -126,22 +133,29 @@ public:
                     ++actual_load;
                     --num_remaining_objs;
                 }
+                std::vector<Object> splitted(
+                    std::make_move_iterator(objects.begin() + num_objects_assigned),
+                    std::make_move_iterator(objects.begin() + (num_objects_assigned + actual_load))
+                );
 
                 // extract the vector of objects to assign
-                std::vector<Object> splitted(objects.begin() + num_objects_assigned, objects.begin() + (num_objects_assigned + actual_load));
+                //auto start_it = std::next(objects.begin(), num_objects_assigned);
+                //auto end_it = std::next(objects.begin(), (num_objects_assigned + actual_load));
+                //splitted.resize(actual_load);
+
+                //std::copy(start_it, end_it, splitted.begin());
                 
                 // increment the number of objects assigned so far
                 num_objects_assigned += actual_load;
+
+
+                std::cout << "\t size assigned: "<<splitted.size() << " - total by far: " << num_objects_assigned << std::endl;
 
                 // create the thread
                 //std::thread th( [this, rasterizer, splitted] { this->_fun_scene_mode_(std::move(splitted), rasterizer); } );
                 //workers.emplace_back( std::thread(&Scene::_fun_scene_mode_) );
 
-                auto functor = 
-                    [this]() ->void {this->_fun_scene_mode_();};
-
-                std::thread t1(functor);
-                workers[thread_count] = std::thread(functor);
+                workers[thread_count] = std::thread([&]{this->_fun_scene_mode_(splitted, rasterizer); } );
 
             }
 
@@ -158,16 +172,15 @@ private:
     std::vector<Object> objects;
     std::mutex mtx;
     
-    void _fun_scene_mode_() {/*std::vector<Object> objects){/*, Rasterizer<target_t>&& rasterizer) {*/
-        mtx.lock();
-        std::cout << "works?" << std::endl;
-        mtx.unlock();
-        //std::cout << objects.size() << std::endl;
-        /*
+    void _fun_scene_mode_(std::vector<Object>& objects, Rasterizer<target_t>& rasterizer) {
+        
+        //std::cout<<objects.size()<<std::endl;
+
+
         for (auto& o : objects) {
-            o.render(*rasterizer,view_);
+            o.render(rasterizer, view_);
         }
-        */
+
     }
 };
 

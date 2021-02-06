@@ -9,7 +9,7 @@ using namespace pipeline3D;
 using namespace std;
 
 
-    // g++ main.cpp read-obj.cpp -o main.out 
+    // g++ main.cpp read-obj.cpp   -o main.out  -pthread
 
     struct my_shader{
          char operator ()(const Vertex &v)  {
@@ -22,11 +22,11 @@ using namespace std;
         const int w=150;
         const int h=50;
 
-        const int num_objects = 1000;
-        const int num_iterations = 1000;
-
+        const int num_objects = 2;
+        const int num_iterations = 1;
 
         const int num_worker_threads = 1;
+
 
 
         Timer timer;
@@ -44,6 +44,7 @@ using namespace std;
 
         Scene<char> scene;
         scene.view_={0.5f,0.0f,0.0f,0.7f,0.0f,0.5f,0.0f,0.7f,0.0f,0.0f,0.5f,0.9f,0.0f,0.0f,0.0f,1.0f};
+        scene.num_threads_ = num_worker_threads;
 
         std::cout << "START reading "<< num_objects <<" objects"<< std::endl;
         timer.reset();
@@ -64,7 +65,7 @@ using namespace std;
             scene.render(rasterizer);
         }
 
-        std::cout << "END rendering "<< num_iterations <<" times ["<< timer.elapsed() <<" sec]"<< std::endl;
+        std::cout << "END rendering "<< num_iterations <<" times with "<< scene.num_threads_ << " threads ["<< timer.elapsed() <<" sec]"<< std::endl;
 
 /*
 
