@@ -76,18 +76,15 @@ public:
                     auto v1=t[0];
                     auto v2=t[1];
                     auto v3=t[2];
-                    //mtx.lock();
+                    
                     transform(world,v1);
                     transform(view,v1);
                     transform(world,v2);
                     transform(view,v2);
                     transform(world,v3);
                     transform(view,v3);
-                    //mtx.unlock();
-
-                    //mtx.lock();
+                    
                     rasterizer.render_vertices(v1,v2,v3, shader_);
-                    //mtx.unlock();
                 }
             }
 
@@ -96,8 +93,6 @@ public:
             Mesh mesh_;
             Shader shader_;
             std::tuple<Textures...> textures_;
-
-            //std::mutex mtx;
         };
 
         std::unique_ptr<Object_impl> pimpl;
@@ -121,7 +116,7 @@ public:
 
 
             std::thread workers[num_threads_];
-            int num_objects_assigned = 0;
+            int num_objects_assigned_so_far = 0;
 
             // assign for each thread its work
             for (int thread_count = 0; thread_count < num_threads_; ++thread_count) {
@@ -133,29 +128,43 @@ public:
                     ++actual_load;
                     --num_remaining_objs;
                 }
+                
+
+                //std::vector<Object> splitted (actual_load);
+                //std::copy( objects.begin() + num_objects_assigned_so_far, objects.begin() + num_objects_assigned_so_far + actual_load , splitted.begin() );
+                
+/*
                 std::vector<Object> splitted(
                     std::make_move_iterator(objects.begin() + num_objects_assigned),
                     std::make_move_iterator(objects.begin() + (num_objects_assigned + actual_load))
                 );
-
+*/
                 // extract the vector of objects to assign
                 //auto start_it = std::next(objects.begin(), num_objects_assigned);
                 //auto end_it = std::next(objects.begin(), (num_objects_assigned + actual_load));
                 //splitted.resize(actual_load);
 
                 //std::copy(start_it, end_it, splitted.begin());
-                
-                // increment the number of objects assigned so far
-                num_objects_assigned += actual_load;
-
-
-                std::cout << "\t size assigned: "<<splitted.size() << " - total by far: " << num_objects_assigned << std::endl;
 
                 // create the thread
                 //std::thread th( [this, rasterizer, splitted] { this->_fun_scene_mode_(std::move(splitted), rasterizer); } );
                 //workers.emplace_back( std::thread(&Scene::_fun_scene_mode_) );
 
-                workers[thread_count] = std::thread([&]{this->_fun_scene_mode_(splitted, rasterizer); } );
+
+                auto first = objects.begin() + num_objects_assigned_so_far;
+                auto last = first + actual_load;
+
+                if ( num_objects_assigned_so_far + actual_load > objects.size()) {
+                    last = objects.end();
+                }
+                
+                workers[thread_count] = std::thread([&]{
+                    this->_fun_scene_mode_(first, last, rasterizer); } );
+
+                // increment the number of objects assigned so far
+                num_objects_assigned_so_far += actual_load;
+
+                std::cout << "\t load assigned: "<<actual_load<< " - total so far: " << num_objects_assigned_so_far << std::endl;
 
             }
 
@@ -170,17 +179,26 @@ public:
 
 private:
     std::vector<Object> objects;
-    std::mutex mtx;
+
+    //std::mutex mtx;
     
-    void _fun_scene_mode_(std::vector<Object>& objects, Rasterizer<target_t>& rasterizer) {
+    template <class Iter>
+    void _fun_scene_mode_(Iter first, Iter last, Rasterizer<target_t>& rasterizer) {
         
         //std::cout<<objects.size()<<std::endl;
 
 
-        for (auto& o : objects) {
-            o.render(rasterizer, view_);
+        while ( first != last) {
+            //mtx.lock();
+            first->render(rasterizer, view_);
+            //mtx.unlock();
+
+            ++first;
         }
 
+        std::thread::id this_id = std::this_thread::get_id();
+        std::cout<< "Thread [" << this_id << "] end"<<std::endl; 
+        
     }
 };
 

@@ -1,7 +1,7 @@
 #include"rasterization.h"
 #include"scene.h"
 #include"read-obj.h"
-#include"timer.h"
+#include"../timer.h"
 using namespace pipeline3D;
 
 #include<iostream>
@@ -9,7 +9,7 @@ using namespace pipeline3D;
 using namespace std;
 
 
-    // g++ main.cpp read-obj.cpp   -o main.out  -pthread
+    // g++ main.cpp read-obj.cpp -Wall  -o main  -pthread
 
     struct my_shader{
          char operator ()(const Vertex &v)  {
@@ -22,8 +22,7 @@ using namespace std;
         const int w=150;
         const int h=50;
 
-        const int num_objects = 2;
-        const int num_iterations = 1;
+        const int num_objects = 654321;
 
         const int num_worker_threads = 1;
 
@@ -45,27 +44,28 @@ using namespace std;
         Scene<char> scene;
         scene.view_={0.5f,0.0f,0.0f,0.7f,0.0f,0.5f,0.0f,0.7f,0.0f,0.0f,0.5f,0.9f,0.0f,0.0f,0.0f,1.0f};
         scene.num_threads_ = num_worker_threads;
+        
+        // load one mesh
+        std::vector<std::array<Vertex,3>> mesh = read_obj("../cubeMod.obj");
 
-        std::cout << "START reading "<< num_objects <<" objects"<< std::endl;
+        std::cout << "START adding "<< num_objects <<" objects"<< std::endl;
         timer.reset();
         
         for (int i=0; i<num_objects; ++i) {
-            std::vector<std::array<Vertex,3>> mesh = read_obj("cubeMod.obj");
-            scene.add_object(Scene<char>::Object(std::move(mesh), shader));
+            scene.add_object(Scene<char>::Object(mesh, shader));
         }
         
 
         
-        std::cout << "END reading "<< num_objects <<" objects ["<< timer.elapsed() <<" sec]"<<std::endl;
+        std::cout << "END adding "<< num_objects <<" objects ["<< timer.elapsed() <<" sec]"<<std::endl;
 
         std::cout << "START rendering with "<< scene.num_threads_ <<" threads"<< std::endl;
         timer.reset();
 
-        for (int i=0; i<num_iterations; ++i) {
-            scene.render(rasterizer);
-        }
+        scene.render(rasterizer);
 
-        std::cout << "END rendering "<< num_iterations <<" times with "<< scene.num_threads_ << " threads ["<< timer.elapsed() <<" sec]"<< std::endl;
+
+        std::cout << "END rendering with "<< scene.num_threads_ << " threads ["<< timer.elapsed() <<" sec]"<< std::endl;
 
 /*
 
