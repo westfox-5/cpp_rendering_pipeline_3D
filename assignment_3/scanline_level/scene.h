@@ -2,29 +2,21 @@
 #define SCENE_H
 #include<memory>
 #include<utility>
-
-#include<math.h>
-#include<thread>
-
 #include"rasterization.h"
 
-
-
-#include<iostream>
 namespace pipeline3D {
 
 
 const std::array<float,16> Identity{1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1};
+
 
 template<class target_t>
 class Scene
 {
 public:
 
-    Scene(): view_(Identity), n_threads(1) {};
+    Scene(): view_(Identity) {};
     std::array<float,16> view_;
-    
-    int n_threads;
 
     class Object{
     public:
@@ -58,15 +50,13 @@ public:
                     auto v1=t[0];
                     auto v2=t[1];
                     auto v3=t[2];
-                    
                     transform(world,v1);
                     transform(view,v1);
                     transform(world,v2);
                     transform(view,v2);
                     transform(world,v3);
                     transform(view,v3);
-                    
-                    rasterizer.render_vertices(v1,v2,v3, shader_);
+                    rasterizer.dispatch_render_vertices(v1,v2,v3, shader_);
                 }
             }
 
@@ -88,76 +78,16 @@ public:
     auto end() {return objects.end();}
 
     void render(Rasterizer<target_t>& rasterizer) {
-
-        // LOAD BALANCING  PER THREAD
-        
-        const int load_per_thread = (int)(std::floor(objects.size() / n_threads));
-        int num_remaining_objs = objects.size() % n_threads;
-        int num_objects_assigned_so_far = 0;
-
-        // WORKER CREATION
-
-        std::vector<std::thread> workers(n_threads);
-
-        for (int thread_count = 0; thread_count < n_threads; ++thread_count) {
-            
-            // if the modulus is > 0, objects is not divisible by n_threads
-            // so we need to assign more objects to each thread.
-            //
-            // by assigning one more to each, we are sure to correctly balance
-            // all worker's load
-            int num_objects_to_assign = load_per_thread;
-            if (num_remaining_objs > 0) {
-                ++num_objects_to_assign;
-                --num_remaining_objs;
-            }
-            
-            auto first = objects.begin() + num_objects_assigned_so_far;
-            auto last = first + num_objects_to_assign; // size from first to last is num_objects_to_assign
-
-            // if calculus overflows objects, stop at last object
-            if ( num_objects_assigned_so_far + num_objects_to_assign > objects.size()) {
-                last = objects.end();
-            }
-            
-            // increment the number of objects assigned so far
-            num_objects_assigned_so_far += num_objects_to_assign;
-
-            // create thread with the worker function
-            std::thread thread([&]{ this->render_chunck(first, last, rasterizer); } );
-
-            workers.push_back( std::move(thread) );
-            std::cout << "\t load assigned: "<<num_objects_to_assign<< " - total so far: " << num_objects_assigned_so_far << std::endl;
+        for (auto& o : objects) {
+            o.render(rasterizer,view_);
         }
 
-        for (std::thread &t: workers) { 
-            if (t.joinable()) {
-                t.join();
-            }
-        }
-
+        // needs to wait!
+        rasterizer.join_threads();
     }
-
-
 
 private:
     std::vector<Object> objects;
-
-    // Worker function to render a chunck of objects, from first to last, assigned by the balancer
-    template <class Iterator>
-    void render_chunck(Iterator first, Iterator last, Rasterizer<target_t>& rasterizer) {
-        std::thread::id this_id = std::this_thread::get_id();
-        
-        while ( first != last) {
-
-            first->render(rasterizer, view_);
-
-            ++first;
-        }
-
-        std::cout<< "\t [" << this_id << "] end"<<std::endl; 
-        
-    }
 };
 
 };
