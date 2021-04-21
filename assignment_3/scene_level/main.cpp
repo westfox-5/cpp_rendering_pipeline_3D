@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
 
     Scene<char> scene;
     scene.view_={0.5f,0.0f,0.0f,0.7f,0.0f,0.5f,0.0f,0.7f,0.0f,0.0f,0.5f,0.9f,0.0f,0.0f,0.0f,1.0f};
-    scene.num_threads_ = num_worker_threads;
+    scene.n_threads = num_worker_threads;
     
     // load one mesh
     std::vector<std::array<Vertex,3>> mesh = read_obj("../cubeMod.obj");
@@ -82,13 +82,13 @@ int main(int argc, char **argv) {
     
     std::cout << "END adding "<< num_objects <<" objects ["<< timer.elapsed() <<" sec]"<<std::endl;
 
-    std::cout << "START rendering with "<< scene.num_threads_ <<" threads"<< std::endl;
+    std::cout << "START rendering with "<< num_worker_threads <<" threads"<< std::endl;
     timer.reset();
 
     scene.render(rasterizer);
 
 
-    std::cout << "END rendering with "<< scene.num_threads_ << " threads ["<< timer.elapsed() <<" sec]"<< std::endl;
+    std::cout << "END rendering with "<< num_worker_threads << " threads ["<< timer.elapsed() <<" sec]"<< std::endl;
 
 
 /*
