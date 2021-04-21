@@ -114,8 +114,7 @@ public:
             const int load_per_thread = (int)(std::floor(objects.size() / num_threads_));
             int num_remaining_objs = objects.size() % num_threads_;
 
-
-            std::thread workers[num_threads_];
+            std::vector<std::thread> workers(num_threads_);
             int num_objects_assigned_so_far = 0;
 
             // assign for each thread its work
@@ -129,47 +128,28 @@ public:
                     --num_remaining_objs;
                 }
                 
-
-                //std::vector<Object> splitted (actual_load);
-                //std::copy( objects.begin() + num_objects_assigned_so_far, objects.begin() + num_objects_assigned_so_far + actual_load , splitted.begin() );
-                
-/*
-                std::vector<Object> splitted(
-                    std::make_move_iterator(objects.begin() + num_objects_assigned),
-                    std::make_move_iterator(objects.begin() + (num_objects_assigned + actual_load))
-                );
-*/
-                // extract the vector of objects to assign
-                //auto start_it = std::next(objects.begin(), num_objects_assigned);
-                //auto end_it = std::next(objects.begin(), (num_objects_assigned + actual_load));
-                //splitted.resize(actual_load);
-
-                //std::copy(start_it, end_it, splitted.begin());
-
-                // create the thread
-                //std::thread th( [this, rasterizer, splitted] { this->_fun_scene_mode_(std::move(splitted), rasterizer); } );
-                //workers.emplace_back( std::thread(&Scene::_fun_scene_mode_) );
-
-
                 auto first = objects.begin() + num_objects_assigned_so_far;
                 auto last = first + actual_load;
 
+                // if calculus overflows objects, stop at last object
                 if ( num_objects_assigned_so_far + actual_load > objects.size()) {
                     last = objects.end();
                 }
                 
-                workers[thread_count] = std::thread([&]{
-                    this->_fun_scene_mode_(first, last, rasterizer); } );
-
                 // increment the number of objects assigned so far
                 num_objects_assigned_so_far += actual_load;
 
-                std::cout << "\t load assigned: "<<actual_load<< " - total so far: " << num_objects_assigned_so_far << std::endl;
+                // create thread with the worker function
+                std::thread thread([&]{ this->render_chunck(first, last, rasterizer); } );
 
+                workers.push_back( std::move(thread) );
+                std::cout << "\t load assigned: "<<actual_load<< " - total so far: " << num_objects_assigned_so_far << std::endl;
             }
 
-            for (auto &t: workers) { 
-                t.join();
+            for (std::thread &t: workers) { 
+                if (t.joinable()) {
+                    t.join();
+                }
             }
 
         } 
@@ -183,11 +163,9 @@ private:
     //std::mutex mtx;
     
     template <class Iter>
-    void _fun_scene_mode_(Iter first, Iter last, Rasterizer<target_t>& rasterizer) {
+    void render_chunck(Iter first, Iter last, Rasterizer<target_t>& rasterizer) {
+        std::thread::id this_id = std::this_thread::get_id();
         
-        //std::cout<<objects.size()<<std::endl;
-
-
         while ( first != last) {
             //mtx.lock();
             first->render(rasterizer, view_);
@@ -196,7 +174,6 @@ private:
             ++first;
         }
 
-        std::thread::id this_id = std::this_thread::get_id();
         std::cout<< "Thread [" << this_id << "] end"<<std::endl; 
         
     }
