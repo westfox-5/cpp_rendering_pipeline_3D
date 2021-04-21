@@ -127,7 +127,10 @@ public:
             std::thread thread([&]{ this->render_chunck(first, last, rasterizer); } );
 
             workers.push_back( std::move(thread) );
-            std::cout << "\t load assigned: "<<num_objects_to_assign<< " - total so far: " << num_objects_assigned_so_far << std::endl << std::flush;
+
+            #ifndef DEBUG
+                std::cout << "\t load assigned: "<<num_objects_to_assign<< " - total so far: " << num_objects_assigned_so_far << std::endl << std::flush;
+            #endif
         }
 
         for (std::thread &t: workers) { 
@@ -146,17 +149,17 @@ private:
     // Worker function to render a chunck of objects, from first to last, assigned by the balancer
     template <class Iterator>
     void render_chunck(Iterator first, Iterator last, Rasterizer<target_t>& rasterizer) {
-        std::thread::id this_id = std::this_thread::get_id();
         
         while ( first != last) {
-
             first->render(rasterizer, view_);
 
             ++first;
         }
 
-        std::cout<< "\t [" << this_id << "] end"<<std::endl << std::flush; 
-        
+        #ifndef DEBUG
+            std::thread::id this_id = std::this_thread::get_id();
+            std::cout<< "\t [" << this_id << "] end"<<std::endl << std::flush; 
+        #endif
     }
 };
 

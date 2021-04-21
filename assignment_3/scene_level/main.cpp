@@ -8,6 +8,17 @@ using namespace pipeline3D;
 
 using namespace std;
 
+
+
+/** ENABLES DEBUGGING LOGGING AND PREVENTS PRINTING THE FINAL SCENE  **/
+/** comment out and re-compile the code in order to disable DEBUG    **/
+#define DEBUG
+
+
+
+
+
+
 struct my_shader{
         char operator ()(const Vertex &v)  {
         return static_cast<char>((v.z-1)*10.0f+0.5f)%10+'0';
@@ -21,7 +32,7 @@ struct my_shader{
  * 
  *  Multi Threading @ scene level.
  * 
- *  Compile using the following command in the directory 'assignment_3/scene_level'
+ *  Compile using the following command in the directory 'assignment_3/scanline_level'
  *      g++ main.cpp read-obj.cpp  -o dist/main  -pthread
  *  
  *  Run the program assigning number of objects to render and number of threads to utilize
@@ -45,12 +56,10 @@ int main(int argc, char **argv) {
     } else {
         num_objects = stoi(argv[1]);
         num_worker_threads = stoi(argv[2]);
-        std::cout << "Running in multi thread mode. Number of threads: " << num_worker_threads << std::endl;    
-
+        std::cout << "Running in multi thread mode. Number of threads: " << num_worker_threads << std::endl;
     }
 
-
-
+    
     Timer timer;
 
     my_shader shader;
@@ -67,8 +76,8 @@ int main(int argc, char **argv) {
     Scene<char> scene;
     scene.view_={0.5f,0.0f,0.0f,0.7f,0.0f,0.5f,0.0f,0.7f,0.0f,0.0f,0.5f,0.9f,0.0f,0.0f,0.0f,1.0f};
     scene.n_threads = num_worker_threads;
-    
-    // load one mesh
+
+    // load the same mesh 'num_objects' times
     std::vector<std::array<Vertex,3>> mesh = read_obj("../cubeMod.obj");
 
     std::cout << "START adding "<< num_objects <<" objects"<< std::endl;
@@ -90,22 +99,22 @@ int main(int argc, char **argv) {
 
     std::cout << "END rendering with "<< num_worker_threads << " threads ["<< timer.elapsed() <<" sec]"<< std::endl;
 
+    // print result only if not debug mode
+    #ifndef DEBUG
+        // print out the screen with a frame around it
+        std::cout << '+';
+        for (int j=0; j!=w; ++j) std::cout << '-';
+        std::cout << "+\n";
 
-/*
-    // print out the screen with a frame around it
-    std::cout << '+';
-    for (int j=0; j!=w; ++j) std::cout << '-';
-    std::cout << "+\n";
+        for (int i=0;i!=h;++i) {
+            std::cout << '|';
+            for (int j=0; j!=w; ++j) std::cout << screen[i*w+j];
+            std::cout << "|\n";
+        }
 
-    for (int i=0;i!=h;++i) {
-        std::cout << '|';
-        for (int j=0; j!=w; ++j) std::cout << screen[i*w+j];
-        std::cout << "|\n";
-    }
-
-    std::cout << '+';
-    for (int j=0; j!=w; ++j) std::cout << '-';
-    std::cout << "+\n";
-*/
+        std::cout << '+';
+        for (int j=0; j!=w; ++j) std::cout << '-';
+        std::cout << "+\n";
+    #endif
     return 0;
 }
