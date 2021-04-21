@@ -127,7 +127,7 @@ public:
             std::thread thread([&]{ this->render_chunck(first, last, rasterizer); } );
 
             workers.push_back( std::move(thread) );
-            std::cout << "\t load assigned: "<<num_objects_to_assign<< " - total so far: " << num_objects_assigned_so_far << std::endl;
+            std::cout << "\t load assigned: "<<num_objects_to_assign<< " - total so far: " << num_objects_assigned_so_far << std::endl << std::flush;
         }
 
         for (std::thread &t: workers) { 
@@ -155,7 +155,7 @@ private:
             ++first;
         }
 
-        std::cout<< "\t [" << this_id << "] end"<<std::endl; 
+        std::cout<< "\t [" << this_id << "] end"<<std::endl << std::flush; 
         
     }
 };
