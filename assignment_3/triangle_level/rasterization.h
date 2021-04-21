@@ -10,6 +10,7 @@
 #include<thread>
 #include<condition_variable>
 #include<mutex>
+#include<future>
 
 #include<iostream>
 
@@ -102,13 +103,19 @@ namespace pipeline3D {
 		template<class Vertex, class Shader, class Interpolator=default_interpolator<Vertex>, class PerspCorrector=default_corrector<Vertex>>
         void dispatch_render_vertices(const Vertex &V1, const Vertex& V2, const Vertex &V3, Shader& shader) {
 
+
 			if (workers.size() >=  n_threads) {
 				// NO SPACE FOR WORKERS 
 
 				// wait for a thread to finish
   				std::unique_lock<std::mutex> lck(mtx);
-  				std::cout<< "WAIT" << std::endl;
+
+				#ifndef DEBUG
+  					std::cout << "\t [!] no threads avalibale, waiting" << std::endl << std::flush;
+				#endif
+				
 				wait_for_workers_CV.wait(lck, [&]{ return this->workers.size() < n_threads;} );
+				lck.unlock();
 
 				// then consume
 			}
@@ -116,16 +123,34 @@ namespace pipeline3D {
 			// can consume
 
 			// create thread with the worker function
-            std::thread thread([&]{ this->render_vertices(V1,V2,V3,shader); } );
+            std::thread thread([&]{ 
+				this->render_vertices(V1,V2,V3,shader); 
+				
+				// make space for another thread!
+				// do this async
+				auto id = std::this_thread::get_id();
+				std::async([&]{
+					std::unique_lock<std::mutex> lck2(mtx);
+					auto iter = std::find_if(workers.begin(), workers.end(), [=](std::thread &t) { return (t.get_id() == id); });
+					if (iter != workers.end()) {
+						iter->detach();
+						workers.erase(iter);
+						wait_for_workers_CV.notify_one();
+					}
+					lck2.unlock();
+				});
+			} );
 
 			// at the end of the render_vertices function, the thread will free up space in the vector
 			// giving the opportunity to another thread in the waiting room to start
+			
+			std::lock_guard<std::mutex> lck(mtx);
+			workers.emplace_back( std::move(thread) );
 
-            workers.push_back( std::move(thread) );
-            std::cout << "\t active threads ["<< workers.size()<< "]" << std::endl << std::flush;
-
+				#ifndef DEBUG
+					std::cout << "\t start new thread [total active: "<< workers.size()<< "]" << std::endl << std::flush;
+				#endif
 		}
-
 
 		void join_threads() {
 			for (std::thread &t: workers) { 
@@ -138,7 +163,7 @@ namespace pipeline3D {
     	std::array<float,16> projection_matrix;
 	
 	private:
-
+	
         template<class Vertex, class Shader, class Interpolator=default_interpolator<Vertex>, class PerspCorrector=default_corrector<Vertex>>
         void render_vertices(const Vertex &V1, const Vertex& V2, const Vertex &V3, Shader& shader,
                              Interpolator interpolate=Interpolator(), PerspCorrector perspective_correct=PerspCorrector()) {
@@ -357,28 +382,10 @@ namespace pipeline3D {
                         shader, interpolate, perspective_correct);
         	}
 	
-
-			// At the end of the scanline, this thread needs to give space
-			// to other threads that are waiting!
-
-	        std::thread::id this_id = std::this_thread::get_id();
-			std::cout<< "\t [" << this_id << "] end"<<std::endl; 
-
-			// remove the thread from the list, so that the worker_available function returns true
-			// do this in async way!
-			std::thread([&]{
-				std::unique_lock<std::mutex> lck(mtx);
-				auto iter = std::find_if(workers.begin(), workers.end(), [=](std::thread &t) { return (t.get_id() == this_id); });
-				if (iter != workers.end())
-				{
-//					std::cout<< "REMOVING THREAD" << std::endl;
-					iter->join();
-					workers.erase(iter);
-					wait_for_workers_CV.notify_one();
-				}}).detach();
-
-			wait_for_workers_CV.notify_one();
-
+			#ifndef DEBUG
+				std::thread::id this_id = std::this_thread::get_id();
+				std::cout<< "\t thread [" << this_id << "] end"<<std::endl<< std::flush; 
+			#endif
     	}
 	
     	float ndc2idxf(float ndc, int range) { return (ndc+1.0f)*(range-1)/2.0f; }
@@ -417,7 +424,7 @@ namespace pipeline3D {
         	}
 	
     	}
-	
+
     	int width;
     	int height;
 	
@@ -426,17 +433,6 @@ namespace pipeline3D {
 		// need this condition variable to notify when a worker has finished, if someone is waiting
 		std::condition_variable wait_for_workers_CV;
 		std::mutex mtx;
-
-		void remove_thread(std::thread::id id){
-  			std::unique_lock<std::mutex> lck(mtx);
-			auto iter = std::find_if(workers.begin(), workers.end(), [=](std::thread &t) { return (t.get_id() == id); });
-			if (iter != workers.end())
-			{
-				std::cout<< "REMOVING THREAD" << std::endl;
-				iter->join();
-				workers.erase(iter);
-			}
-		}
 
 
     	Target_t* target;

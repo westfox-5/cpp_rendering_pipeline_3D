@@ -81,8 +81,6 @@ public:
         for (auto& o : objects) {
             o.render(rasterizer,view_);
         }
-
-        // needs to wait!
         rasterizer.join_threads();
     }
 
