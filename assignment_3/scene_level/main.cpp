@@ -33,10 +33,10 @@ struct my_shader{
  *  Multi Threading @ scene level.
  * 
  *  Compile using the following command in the directory 'assignment_3/scanline_level'
- *      g++ main.cpp read-obj.cpp  -o dist/main  -pthread
+ *      g++ main.cpp read-obj.cpp  -o main  -pthread
  *  
  *  Run the program assigning number of objects to render and number of threads to utilize
- *   (e.g.)     ./dist/main 100000 4 
+ *   (e.g.)     ./main 100000 4 
  * 
  * */
 
@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
     // load the same mesh 'num_objects' times
     std::vector<std::array<Vertex,3>> mesh = read_obj("../cubeMod.obj");
 
-    std::cout << "START adding "<< num_objects <<" objects"<< std::endl;
+    std::cout << "START adding "<< num_objects <<" objects to the scene"<< std::endl;
     timer.reset();
     
     for (int i=0; i<num_objects; ++i) {
