@@ -1,3 +1,18 @@
+/**
+ * 
+ *  [CM0470-2] RENDERING PIPELINE - ASSIGNMENT 3
+ *  Davide Volpe - 862989
+ * 
+ *  Multi Threading @ scanline level.
+ * 
+ *  Compile using the following command in the directory 'assignment_3/triangle_level'
+ *      g++ main.cpp read-obj.cpp  -o main  -pthread
+ *  
+ *  Run the program assigning number of objects to render and number of threads to utilize
+ *   (e.g.)     ./main 100000 4 
+ * 
+ * */
+
 #include"rasterization.h"
 #include"scene.h"
 #include"read-obj.h"
@@ -25,20 +40,6 @@ struct my_shader{
     }
 };
 
-/**
- * 
- *  [CM0470-2] RENDERING PIPELINE - ASSIGNMENT 3
- *  Davide Volpe - 862989
- * 
- *  Multi Threading @ scanline level.
- * 
- *  Compile using the following command in the directory 'assignment_3/scanline_level'
- *      g++ main.cpp read-obj.cpp  -o main  -pthread
- *  
- *  Run the program assigning number of objects to render and number of threads to utilize
- *   (e.g.)     ./main 100000 4 
- * 
- * */
 
 int main(int argc, char **argv) {
     const int w=150;
@@ -69,15 +70,14 @@ int main(int argc, char **argv) {
     std::vector<char> screen(w*h,'.');
     rasterizer.set_target(w,h,&screen[0]);
     
-    rasterizer.n_threads = num_worker_threads;
-
     std::vector<std::vector<std::array<Vertex,3>>> objects;
     
     
 
     Scene<char> scene;
     scene.view_={0.5f,0.0f,0.0f,0.7f,0.0f,0.5f,0.0f,0.7f,0.0f,0.0f,0.5f,0.9f,0.0f,0.0f,0.0f,1.0f};
-    
+    scene.n_threads = num_worker_threads;
+
     // load the same mesh 'num_objects' times
     std::vector<std::array<Vertex,3>> mesh = read_obj("../cubeMod.obj");
 

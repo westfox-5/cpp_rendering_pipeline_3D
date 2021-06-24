@@ -5,6 +5,7 @@
 
 #include<math.h>
 #include<thread>
+#include<mutex>
 
 #include"rasterization.h"
 
@@ -125,7 +126,6 @@ public:
 
             // create thread with the worker function
             std::thread thread([&]{ this->render_chunck(first, last, rasterizer); } );
-
             workers.push_back( std::move(thread) );
 
             #ifndef DEBUG
@@ -145,20 +145,23 @@ public:
 
 private:
     std::vector<Object> objects;
+	std::mutex mtx;
 
     // Worker function to render a chunck of objects, from first to last, assigned by the balancer
     template <class Iterator>
     void render_chunck(Iterator first, Iterator last, Rasterizer<target_t>& rasterizer) {
         
         while ( first != last) {
+            std::unique_lock<std::mutex> lck(mtx);
             first->render(rasterizer, view_);
 
             ++first;
+            lck.unlock();
         }
 
         #ifndef DEBUG
             std::thread::id this_id = std::this_thread::get_id();
-            std::cout<< "\t [" << this_id << "] end"<<std::endl << std::flush; 
+            std::cout<< "\t thread [" << this_id << "] end"<<std::endl << std::flush; 
         #endif
     }
 };

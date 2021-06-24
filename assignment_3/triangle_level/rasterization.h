@@ -6,14 +6,6 @@
 #include<array>
 #include<type_traits>
 
-#include<algorithm>
-#include<thread>
-#include<condition_variable>
-#include<mutex>
-#include<future>
-
-#include<iostream>
-
 
 namespace pipeline3D {
 	
@@ -22,10 +14,7 @@ namespace pipeline3D {
 	template<class Target_t>
 	class Rasterizer {
 	public:
-		Rasterizer(): n_threads(1) {};
-
-		int n_threads;
-
+	
     	void set_target(int w, int h, Target_t* t) {
         	width=w;
         	height=h;
@@ -97,73 +86,9 @@ namespace pipeline3D {
                  class PerspCorrector=default_corrector<std::remove_reference_t<decltype(Triangle()[0])>>>
         void render_triangle(const Triangle& triangle, Shader& shader,
                              Interpolator interpolate=Interpolator(), PerspCorrector perspective_correct=PerspCorrector()) {
-            dispatch_render_vertices(triangle[0], triangle[1], triangle[2], shader, interpolate, perspective_correct);
+            render_vertices(triangle[0], triangle[1], triangle[2], shader, interpolate, perspective_correct);
         }
 
-		template<class Vertex, class Shader, class Interpolator=default_interpolator<Vertex>, class PerspCorrector=default_corrector<Vertex>>
-        void dispatch_render_vertices(const Vertex &V1, const Vertex& V2, const Vertex &V3, Shader& shader) {
-
-
-			if (workers.size() >=  n_threads) {
-				// NO SPACE FOR WORKERS 
-
-				// wait for a thread to finish
-  				std::unique_lock<std::mutex> lck(mtx);
-
-				#ifndef DEBUG
-  					std::cout << "\t [!] no threads avalibale, waiting" << std::endl << std::flush;
-				#endif
-				
-				wait_for_workers_CV.wait(lck, [&]{ return this->workers.size() < n_threads;} );
-				lck.unlock();
-
-				// then consume
-			}
-
-			// can consume
-
-			// create thread with the worker function
-            std::thread thread([&]{ 
-				this->render_vertices(V1,V2,V3,shader); 
-				
-				// make space for another thread!
-				// do this async
-				auto id = std::this_thread::get_id();
-				std::async([&]{
-					std::unique_lock<std::mutex> lck2(mtx);
-					auto iter = std::find_if(workers.begin(), workers.end(), [=](std::thread &t) { return (t.get_id() == id); });
-					if (iter != workers.end()) {
-						iter->detach();
-						workers.erase(iter);
-						wait_for_workers_CV.notify_one();
-					}
-					lck2.unlock();
-				});
-			} );
-
-			// at the end of the render_vertices function, the thread will free up space in the vector
-			// giving the opportunity to another thread in the waiting room to start
-			
-			std::lock_guard<std::mutex> lck(mtx);
-			workers.emplace_back( std::move(thread) );
-
-				#ifndef DEBUG
-					std::cout << "\t start new thread [total active: "<< workers.size()<< "]" << std::endl << std::flush;
-				#endif
-		}
-
-		void join_threads() {
-			for (std::thread &t: workers) { 
-				if (t.joinable()) {
-					t.join();
-				}
-			}
-		}
-	
-    	std::array<float,16> projection_matrix;
-	
-	private:
-	
         template<class Vertex, class Shader, class Interpolator=default_interpolator<Vertex>, class PerspCorrector=default_corrector<Vertex>>
         void render_vertices(const Vertex &V1, const Vertex& V2, const Vertex &V3, Shader& shader,
                              Interpolator interpolate=Interpolator(), PerspCorrector perspective_correct=PerspCorrector()) {
@@ -382,11 +307,13 @@ namespace pipeline3D {
                         shader, interpolate, perspective_correct);
         	}
 	
-			#ifndef DEBUG
-				std::thread::id this_id = std::this_thread::get_id();
-				std::cout<< "\t thread [" << this_id << "] end"<<std::endl<< std::flush; 
-			#endif
+	
+	
     	}
+	
+    	std::array<float,16> projection_matrix;
+	
+	private:
 	
     	float ndc2idxf(float ndc, int range) { return (ndc+1.0f)*(range-1)/2.0f; }
 	
@@ -424,17 +351,12 @@ namespace pipeline3D {
         	}
 	
     	}
-
+	
     	int width;
     	int height;
 	
-		std::vector<std::thread> workers;
-
-		// need this condition variable to notify when a worker has finished, if someone is waiting
-		std::condition_variable wait_for_workers_CV;
-		std::mutex mtx;
-
-
+	
+	
     	Target_t* target;
         std::vector<float> z_buffer;
 	};

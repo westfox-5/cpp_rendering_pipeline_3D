@@ -1,3 +1,18 @@
+/**
+ * 
+ *  [CM0470-2] RENDERING PIPELINE - ASSIGNMENT 3
+ *  Davide Volpe - 862989
+ * 
+ *  Multi Threading @ scene level.
+ * 
+ *  Compile using the following command in the directory 'assignment_3/scene_level'
+ *      g++ main.cpp read-obj.cpp  -o main  -pthread
+ *  
+ *  Run the program assigning number of objects to render and number of threads to utilize
+ *   (e.g.)     ./main 100000 4 
+ * 
+ * */
+ 
 #include"rasterization.h"
 #include"scene.h"
 #include"read-obj.h"
@@ -25,20 +40,6 @@ struct my_shader{
     }
 };
 
-/**
- * 
- *  [CM0470-2] RENDERING PIPELINE - ASSIGNMENT 3
- *  Davide Volpe - 862989
- * 
- *  Multi Threading @ scene level.
- * 
- *  Compile using the following command in the directory 'assignment_3/scanline_level'
- *      g++ main.cpp read-obj.cpp  -o main  -pthread
- *  
- *  Run the program assigning number of objects to render and number of threads to utilize
- *   (e.g.)     ./main 100000 4 
- * 
- * */
 
 int main(int argc, char **argv) {
     const int w=150;
