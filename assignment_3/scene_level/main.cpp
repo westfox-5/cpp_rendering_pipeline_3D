@@ -47,60 +47,58 @@ int main(int argc, char **argv) {
 
     int num_objects = 1;
     int num_worker_threads = 1;
+    int num_runs = 1;
 
     if (argc < 2) {
-        std::cout << "Please specify number of objects to render and number of threads to run with as command line arguments" << std::endl;
+        std::cout << "Please specify number of objects to render, number of threads and number of runs as command line arguments" << std::endl;
         exit(-1);
     } else if (argc == 2) {
-        std::cout << "Running in single thread mode. Please specify number of threads as command line argument." << std::endl;    
+        std::cout << "Executing a single run in single thread mode. Please specify number of threads as command line argument." << std::endl;    
         num_objects = stoi(argv[1]);
-    } else {
+    } else if (argc == 3) {
         num_objects = stoi(argv[1]);
         num_worker_threads = stoi(argv[2]);
-        std::cout << "Running in multi thread mode. Number of threads: " << num_worker_threads << std::endl;
+        std::cout << "Executing a single run in multi thread mode. Number of threads: " << num_worker_threads << std::endl;
+    } else if (argc == 4) {
+        num_objects = stoi(argv[1]);
+        num_worker_threads = stoi(argv[2]);
+        num_runs = stoi(argv[3]);
+        std::cout << "Running "<< num_runs <<" times in multi thread mode. Number of threads: " << num_worker_threads << std::endl;
     }
 
-    
     Timer timer;
+    std::vector<char> screen(w*h,'.');
 
     my_shader shader;
     Rasterizer<char> rasterizer;
     rasterizer.set_perspective_projection(-1,1,-1,1,1,2);
 
-    std::vector<char> screen(w*h,'.');
     rasterizer.set_target(w,h,&screen[0]);
-
+    
     std::vector<std::vector<std::array<Vertex,3>>> objects;
-    
-    
 
     Scene<char> scene;
     scene.view_={0.5f,0.0f,0.0f,0.7f,0.0f,0.5f,0.0f,0.7f,0.0f,0.0f,0.5f,0.9f,0.0f,0.0f,0.0f,1.0f};
     scene.n_threads = num_worker_threads;
-
-    // load the same mesh 'num_objects' times
-    std::vector<std::array<Vertex,3>> mesh = read_obj("../cubeMod.obj");
-
-    //std::cout << "START adding "<< num_objects <<" objects to the scene"<< std::endl;
-    timer.reset();
     
-    for (int i=0; i<num_objects; ++i) {
-        scene.add_object(Scene<char>::Object(mesh, shader));
+    for (int run = 0; run < num_runs; run++) {
+        screen.clear();
+
+        // load the same mesh 'num_objects' times
+        std::vector<std::array<Vertex,3>> mesh = read_obj("../cubeMod.obj");
+
+        for (int i=0; i<num_objects; ++i) {
+            scene.add_object(Scene<char>::Object(mesh, shader));
+        }
+        
+        std::cout << "START rendering with "<< num_worker_threads <<" threads"<< std::endl;
+        timer.reset();
+
+        scene.render(rasterizer);
+
+        std::cout << "END rendering "<< num_objects <<" with "<< num_worker_threads << " threads ["<< timer.elapsed() <<" sec]"<< std::endl;
     }
     
-
-    
-   // std::cout << "END adding "<< num_objects <<" objects ["<< timer.elapsed() <<" sec]"<<std::endl;
-
-    std::cout << "START rendering "<< num_objects <<" with "<< num_worker_threads <<" threads"<< std::endl;
-    timer.reset();
-
-    scene.render(rasterizer);
-
-
-    std::cout << "END rendering with "<< num_worker_threads << " threads ["<< timer.elapsed() <<" sec]"<< std::endl;
-
-    // print result only if not debug mode
     #ifndef DEBUG
         // print out the screen with a frame around it
         std::cout << '+';

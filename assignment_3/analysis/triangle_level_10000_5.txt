@@ -1,0 +1,21 @@
+Running 10 times in multi thread mode. Number of threads: 5
+START rendering with 5 threads
+END rendering 10000 with 5 threads [5.96275 sec]
+START rendering with 5 threads
+END rendering 10000 with 5 threads [5.88175 sec]
+START rendering with 5 threads
+END rendering 10000 with 5 threads [5.86503 sec]
+START rendering with 5 threads
+END rendering 10000 with 5 threads [5.79133 sec]
+START rendering with 5 threads
+END rendering 10000 with 5 threads [5.73708 sec]
+START rendering with 5 threads
+END rendering 10000 with 5 threads [5.85906 sec]
+START rendering with 5 threads
+END rendering 10000 with 5 threads [6.07253 sec]
+START rendering with 5 threads
+END rendering 10000 with 5 threads [5.97312 sec]
+START rendering with 5 threads
+END rendering 10000 with 5 threads [5.9655 sec]
+START rendering with 5 threads
+END rendering 10000 with 5 threads [6.03907 sec]
