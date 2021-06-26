@@ -54,13 +54,13 @@ public:
                 mesh_(std::forward<Mesh>(mesh)), shader_(std::forward<Shader>(shader)), textures_(std::forward<Textures>(textures)...) {}
 
             void render(Rasterizer<target_t>& rasterizer, const std::array<float,16>& view, const std::array<float,16>& world, int n_threads) override {
-                int num_tris = mesh_.size();
+                int num_faces = mesh_.size();
 
                 // LOAD BALANCING  PER THREAD
                 
-                const int load_per_thread = (int)(std::floor(num_tris / n_threads));
-                int num_remaining_tris = num_tris % n_threads;
-                int num_tris_assigned_so_far = 0;
+                const int load_per_thread = (int)(std::floor(num_faces / n_threads));
+                int num_remaining_tris = num_faces % n_threads;
+                int num_faces_assigned_so_far = 0;
 
                 // WORKER CREATION
 
@@ -73,22 +73,22 @@ public:
                     //
                     // by assigning one more to each, we are sure to correctly balance
                     // all worker's load
-                    int num_tris_to_assign = load_per_thread;
+                    int num_faces_to_assign = load_per_thread;
                     if (num_remaining_tris > 0) {
-                        ++num_tris_to_assign;
+                        ++num_faces_to_assign;
                         --num_remaining_tris;
                     }
                     
-                    auto first = mesh_.begin() + num_tris_assigned_so_far;
-                    auto last = first + num_tris_to_assign; // size from first to last is num_objects_to_assign
+                    auto first = mesh_.begin() + num_faces_assigned_so_far;
+                    auto last = first + num_faces_to_assign; // size from first to last is num_objects_to_assign
 
                     // if calculus overflows triangles, stop at last triangle
-                    if ( num_tris_assigned_so_far + num_tris_to_assign > num_tris) {
+                    if ( num_faces_assigned_so_far + num_faces_to_assign > num_faces) {
                         last = mesh_.end();
                     }
                     
                     // increment the number of triangles assigned so far
-                    num_tris_assigned_so_far += num_tris_to_assign;
+                    num_faces_assigned_so_far += num_faces_to_assign;
 
                     // create thread with the worker function
                     std::thread thread([&]{  
@@ -107,15 +107,21 @@ public:
                             transform(view,v3);
                             rasterizer.render_vertices(v1,v2,v3,shader_);
 
+
                             ++first;
                         }
+                        
+                        #ifdef DEBUG
+                            std::thread::id this_id = std::this_thread::get_id();
+                            std::cout<< "\t thread [" << this_id << "] end"<<std::endl << std::flush; 
+                        #endif
                         lck.unlock();
                     });
 
                     workers.push_back( std::move(thread) );
 
-                    #ifndef DEBUG
-                        std::cout << "\t load assigned: "<<num_tris_to_assign<< " - total so far: " << num_tris_assigned_so_far << std::endl << std::flush;
+                    #ifdef DEBUG
+                        std::cout << "\t load assigned: "<<num_faces_to_assign<< " - total so far: " << num_faces_assigned_so_far << std::endl << std::flush;
                     #endif
                 }
 

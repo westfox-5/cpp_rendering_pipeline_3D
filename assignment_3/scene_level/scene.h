@@ -128,8 +128,8 @@ public:
             std::thread thread([&]{ this->render_chunck(first, last, rasterizer); } );
             workers.push_back( std::move(thread) );
 
-            #ifndef DEBUG
-                std::cout << "\t load assigned: "<<num_objects_to_assign<< " - total so far: " << num_objects_assigned_so_far << std::endl << std::flush;
+            #ifdef DEBUG
+               std::cout << "\t load assigned: "<<num_objects_to_assign<< " - total so far: " << num_objects_assigned_so_far << std::endl << std::flush;
             #endif
         }
 
@@ -159,7 +159,7 @@ private:
             lck.unlock();
         }
 
-        #ifndef DEBUG
+        #ifdef DEBUG
             std::thread::id this_id = std::this_thread::get_id();
             std::cout<< "\t thread [" << this_id << "] end"<<std::endl << std::flush; 
         #endif

@@ -27,7 +27,7 @@ using namespace std;
 
 /** ENABLES DEBUGGING LOGGING AND PREVENTS PRINTING THE FINAL SCENE  **/
 /** comment out and re-compile the code in order to disable DEBUG    **/
-#define DEBUG
+// #define DEBUG
 
 
 
@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
     // load the same mesh 'num_objects' times
     std::vector<std::array<Vertex,3>> mesh = read_obj("../cubeMod.obj");
 
-    std::cout << "START adding "<< num_objects <<" objects to the scene"<< std::endl;
+    // std::cout << "START adding "<< num_objects <<" objects to the scene"<< std::endl;
     timer.reset();
     
     for (int i=0; i<num_objects; ++i) {
@@ -90,7 +90,7 @@ int main(int argc, char **argv) {
     
 
     
-    std::cout << "END adding "<< num_objects <<" objects ["<< timer.elapsed() <<" sec]"<<std::endl;
+    // std::cout << "END adding "<< num_objects <<" objects ["<< timer.elapsed() <<" sec]"<<std::endl;
 
     std::cout << "START rendering with "<< num_worker_threads <<" threads"<< std::endl;
     timer.reset();
@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
     scene.render(rasterizer);
 
 
-    std::cout << "END rendering with "<< num_worker_threads << " threads ["<< timer.elapsed() <<" sec]"<< std::endl;
+    std::cout << "END rendering "<< num_objects <<" with "<< num_worker_threads << " threads ["<< timer.elapsed() <<" sec]"<< std::endl;
 
     // print result only if not debug mode
     #ifndef DEBUG
