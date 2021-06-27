@@ -9,7 +9,7 @@
  *      g++ main.cpp read-obj.cpp  -o main  -pthread
  *  
  *  Run the program assigning number of objects to render and number of threads to utilize
- *   (e.g.)     ./main 100000 4 
+ *   (e.g.)     ./main 1000 4 
  * 
  * */
 
@@ -26,7 +26,7 @@ using namespace std;
 
 
 /** ENABLES DEBUGGING LOGGING AND PREVENTS PRINTING THE FINAL SCENE  **/
-/** comment out and re-compile the code in order to disable DEBUG    **/
+/** comment out and re-compile the code in order to enable DEBUG    **/
 // #define DEBUG
 
 
@@ -47,23 +47,20 @@ int main(int argc, char **argv) {
 
     int num_objects = 1;
     int num_worker_threads = 1;
-    int num_runs = 1;
 
     if (argc < 2) {
-        std::cout << "Please specify number of objects to render, number of threads and number of runs as command line arguments" << std::endl;
+        std::cout << "Please specify number of objects to render and number of threads as command line arguments" << std::endl;
         exit(-1);
     } else if (argc == 2) {
-        std::cout << "Executing a single run in single thread mode. Please specify number of threads as command line argument." << std::endl;    
+        std::cout << "Running in single-thread mode. Please specify number of threads as command line argument." << std::endl;    
         num_objects = stoi(argv[1]);
     } else if (argc == 3) {
         num_objects = stoi(argv[1]);
         num_worker_threads = stoi(argv[2]);
-        std::cout << "Executing a single run in multi thread mode. Number of threads: " << num_worker_threads << std::endl;
-    } else if (argc == 4) {
-        num_objects = stoi(argv[1]);
-        num_worker_threads = stoi(argv[2]);
-        num_runs = stoi(argv[3]);
-        std::cout << "Running "<< num_runs <<" times in multi thread mode. Number of threads: " << num_worker_threads << std::endl;
+        std::cout << "Running in multi-thread mode. Number of threads: " << num_worker_threads << std::endl;
+    } else {
+        std::cout << "Invalid number of arguments: max 2 arguments." << std::endl;
+        return -1;
     }
 
     Timer timer;
@@ -81,23 +78,20 @@ int main(int argc, char **argv) {
     scene.view_={0.5f,0.0f,0.0f,0.7f,0.0f,0.5f,0.0f,0.7f,0.0f,0.0f,0.5f,0.9f,0.0f,0.0f,0.0f,1.0f};
     scene.n_threads = num_worker_threads;
 
-    for (int run = 0; run < num_runs; run++) {
-        screen.clear();
+    // load the same mesh 'num_objects' times
+    std::vector<std::array<Vertex,3>> mesh = read_obj("../cubeMod.obj");
 
-        // load the same mesh 'num_objects' times
-        std::vector<std::array<Vertex,3>> mesh = read_obj("../cubeMod.obj");
-
-        for (int i=0; i<num_objects; ++i) {
-            scene.add_object(Scene<char>::Object(mesh, shader));
-        }
-        
-        std::cout << "START rendering with "<< num_worker_threads <<" threads"<< std::endl;
-        timer.reset();
-
-        scene.render(rasterizer);
-
-        std::cout << "END rendering "<< num_objects <<" with "<< num_worker_threads << " threads ["<< timer.elapsed() <<" sec]"<< std::endl;
+    for (int i=0; i<num_objects; ++i) {
+        scene.add_object(Scene<char>::Object(mesh, shader));
     }
+    
+    std::cout << "START rendering with "<< num_worker_threads <<" threads"<< std::endl;
+    timer.reset();
+
+    scene.render(rasterizer);
+
+    std::cout << "END rendering "<< num_objects <<" with "<< num_worker_threads << " threads ["<< timer.elapsed() <<" sec]"<< std::endl;
+
     
     #ifndef DEBUG
         // print out the screen with a frame around it
